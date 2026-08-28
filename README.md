@@ -52,6 +52,14 @@ x-cluster-config:
   worker-cores: &worker-cores "3"
 ```
 
+Ese bloque es la fuente de verdad para el tamaño de los nodos worker:
+
+| Parámetro | Valor actual | Qué controla | Dónde se aplica |
+| --- | ---: | --- | --- |
+| `worker-count` | `4` | Cantidad de nodos worker del clúster. | `deploy.replicas` del servicio `spark-worker`. |
+| `worker-memory` | `8g` | Memoria máxima por worker. | `mem_limit` de Docker y `--memory` del worker Spark. |
+| `worker-cores` | `3` | CPU asignada por worker. | `cpus` de Docker y `--cores` del worker Spark. |
+
 - `worker-count` controla el número de réplicas del servicio `spark-worker`
   vía `deploy.replicas`, así que no hace falta el flag `--scale` al arrancar.
 - `worker-memory` se reutiliza (con `*worker-memory`) tanto en `mem_limit`
@@ -114,6 +122,25 @@ docker compose up --build -d
 - `docker/minio/`: reservada para una futura definición de MinIO (almacenamiento
   compatible con S3). Actualmente está vacía y no hay ningún servicio `minio`
   en `compose.yaml`.
+
+## Herramientas y componentes incluidos
+
+| Tool / componente | Versión o definición | Dónde vive | Para qué se usa |
+| --- | --- | --- | --- |
+| Docker | Instalado en el host | Host | Ejecutar contenedores, listar imágenes, ver logs y limpiar recursos. |
+| Docker Compose v2 | Instalado en el host | Host | Construir y operar el clúster definido en `compose.yaml`. |
+| Apache Spark | `3.5.6` | Imagen `apache/spark:3.5.6` | Motor distribuido del clúster. |
+| Spark Master | `org.apache.spark.deploy.master.Master` | Servicio `spark-master` | Coordina workers y recibe aplicaciones Spark. |
+| Spark Worker | `org.apache.spark.deploy.worker.Worker` | Servicio `spark-worker` | Ejecuta tareas Spark con los recursos definidos en `x-cluster-config`. |
+| Spark Master UI | Puerto `8080` | `spark-master` | Ver estado del clúster, workers conectados y aplicaciones. |
+| Spark Standalone endpoint | Puerto `7077` | `spark-master` | Recibir clientes Spark externos con `spark://<host>:7077`. |
+| `spark-submit` | Incluido con Spark | `/opt/spark/bin/spark-submit` | Enviar jobs al clúster desde dentro del contenedor master. |
+| `spark-class` | Incluido con Spark | `/opt/spark/bin/spark-class` | Arrancar los procesos internos de master y worker. |
+| `pyspark` | Línea compatible `3.5.x` | Cliente externo o imagen Spark | Conectar proyectos Python al clúster. |
+| Java runtime | Incluido por la imagen base de Spark | Imagen `apache/spark:3.5.6` | Requisito de ejecución de Spark. |
+| Bind mount `data/` | Carpeta local del host | `/data` en contenedores | Compartir entradas y salidas entre master y workers. |
+| Bind mount `warehouse/` | Carpeta local del host | `/warehouse` en contenedores | Persistir tablas o datos administrados por jobs. |
+| Bind mount `jars/` | Carpeta local del host | `/opt/spark/jars-extra` en master | Agregar JARs externos al entorno del master. |
 
 ## Arrancar todo
 
@@ -286,10 +313,33 @@ Parar los contenedores manteniendo los datos locales:
 docker compose down
 ```
 
+Ese comando elimina los contenedores de `spark-master`, las réplicas de
+`spark-worker` y la red creada por Compose. Es el comando recomendado cuando ya
+no necesitas tener el clúster levantado.
+
+Si quieres asegurarte de borrar contenedores huérfanos de ejecuciones previas:
+
+```bash
+docker compose down --remove-orphans
+```
+
 Parar y eliminar también las imágenes construidas por este Compose:
 
 ```bash
 docker compose down --rmi local
+```
+
+Eliminar contenedores detenidos manualmente, si quedaron fuera de Compose:
+
+```bash
+docker ps -a
+docker rm NOMBRE_O_ID
+```
+
+Limpiar recursos Docker no usados por ningún proyecto:
+
+```bash
+docker system prune
 ```
 
 Los directorios `data/`, `warehouse/` y `jars/` son bind mounts del host, por
