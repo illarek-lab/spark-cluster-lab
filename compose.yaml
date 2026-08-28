@@ -1,0 +1,62 @@
+x-cluster-config:
+  # Servidor de referencia: 15 cores / 50 GB RAM.
+  # 4 workers x 8g = 32 GB, dejando 18 GB libres para el master, Docker y el SO.
+  # 4 workers x 3 cores = 12 cores, dejando 3 cores libres para el master,
+  # Docker y el SO. Sube worker-cores solo si el host no corre nada más en
+  # paralelo; en un servidor compartido es más seguro dejar 2 en vez de 3.
+  worker-count: &worker-count 4
+  worker-memory: &worker-memory "8g"
+  worker-cores: &worker-cores "3"
+
+services:
+
+  spark-master:
+    build:
+      context: .
+      dockerfile: docker/spark/Dockerfile
+
+    container_name: spark-master
+
+    hostname: spark-master
+
+    command: >
+      /opt/spark/bin/spark-class
+      org.apache.spark.deploy.master.Master
+
+    ports:
+      - "7077:7077"
+      - "8080:8080"
+
+    volumes:
+      - ./warehouse:/warehouse
+      - ./data:/data
+      - ./jars:/opt/spark/jars-extra
+
+  spark-worker:
+
+    build:
+      context: .
+      dockerfile: docker/spark/Dockerfile
+
+    depends_on:
+      - spark-master
+
+    command:
+      - /opt/spark/bin/spark-class
+      - org.apache.spark.deploy.worker.Worker
+      - --cores
+      - *worker-cores
+      - --memory
+      - *worker-memory
+      - spark://spark-master:7077
+
+    deploy:
+      replicas: *worker-count
+
+    mem_limit: *worker-memory
+
+    cpus: *worker-cores
+
+    volumes:
+      - ./warehouse:/warehouse
+      - ./data:/data
