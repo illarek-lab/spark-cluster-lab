@@ -24,7 +24,7 @@ x-cluster-config:
 # actualízalos ahí también a mano.
 x-lab-credentials:
   lab-user: &lab-user admin
-  lab-password: &lab-password password
+  lab-password: &lab-password pass
 
 x-minio-env: &minio-env
   MINIO_ROOT_USER: *lab-user
