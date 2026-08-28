@@ -139,13 +139,13 @@ docker compose up --build -d
 ### Credenciales del lab
 
 `compose.yaml` define `x-lab-credentials` con un único usuario/password
-(`admin`/`password`) reutilizado en MinIO, Polaris, Hive PostgreSQL y
+(`admin`/`pass1234`) reutilizado en MinIO, Polaris, Hive PostgreSQL y
 ClickHouse, para no tener que recordar una credencial distinta por servicio:
 
 ```yaml
 x-lab-credentials:
   lab-user: &lab-user admin
-  lab-password: &lab-password password
+  lab-password: &lab-password pass1234
 ```
 
 Ese anchor se referencia (`*lab-user`/`*lab-password`) en los servicios
@@ -160,7 +160,7 @@ así que si cambias el valor hay que actualizarlos a mano:
 - `spark.sql.catalog.polaris.credential` en `conf/spark-defaults.conf`.
 
 El usuario `default` de ClickHouse se mantiene sin password (comportamiento
-propio de la imagen); `admin`/`password` queda como un usuario
+propio de la imagen); `admin`/`pass1234` queda como un usuario
 adicional.
 
 ## Spark Standalone y YARN
@@ -314,10 +314,10 @@ Credenciales locales — todas iguales a propósito, fijadas en
 
 | Servicio | Usuario | Password |
 | --- | --- | --- |
-| MinIO | `admin` | `password` |
-| Polaris root | `admin` | `password` |
-| Hive PostgreSQL | `admin` | `password` |
-| ClickHouse (`admin`) | `admin` | `password` |
+| MinIO | `admin` | `pass1234` |
+| Polaris root | `admin` | `pass1234` |
+| Hive PostgreSQL | `admin` | `pass1234` |
+| ClickHouse (`admin`) | `admin` | `pass1234` |
 | ClickHouse (`default`) | `default` | sin password (se mantiene, aparte del usuario `admin`) |
 
 Comprueba que los servicios estén levantados:
@@ -472,7 +472,7 @@ SELECT * FROM polaris.lab.events;
 
 Los archivos de esas tablas quedan en MinIO bajo el bucket `warehouse`, en los
 prefijos `iceberg/` y `polaris/`. Puedes verlos en
-<http://localhost:9001> con usuario `admin` y password `password`.
+<http://localhost:9001> con usuario `admin` y password `pass1234`.
 
 ## Usar Hive y ClickHouse
 

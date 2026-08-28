@@ -60,11 +60,11 @@ Usa estas variables en scripts o `.env` del proyecto cliente:
 export SPARK_MASTER_URL=spark://100.85.61.29:17077
 export MINIO_ENDPOINT=http://100.85.61.29:19000
 export MINIO_ACCESS_KEY=admin
-export MINIO_SECRET_KEY=password
+export MINIO_SECRET_KEY=pass1234
 export HIVE_METASTORE_URI=thrift://100.85.61.29:19083
 export POLARIS_CATALOG_URI=http://100.85.61.29:18181/api/catalog
 export POLARIS_WAREHOUSE=lakehouse
-export POLARIS_CREDENTIAL=admin:password
+export POLARIS_CREDENTIAL=admin:pass1234
 export CLICKHOUSE_HOST=100.85.61.29
 export CLICKHOUSE_HTTP_PORT=18123
 export CLICKHOUSE_NATIVE_PORT=19010
@@ -106,11 +106,11 @@ spark = (
     .config("spark.sql.catalog.polaris.catalog-impl", "org.apache.iceberg.rest.RESTCatalog")
     .config("spark.sql.catalog.polaris.uri", "http://100.85.61.29:18181/api/catalog")
     .config("spark.sql.catalog.polaris.warehouse", "lakehouse")
-    .config("spark.sql.catalog.polaris.credential", "admin:password")
+    .config("spark.sql.catalog.polaris.credential", "admin:pass1234")
     .config("spark.sql.catalog.polaris.scope", "PRINCIPAL_ROLE:ALL")
     .config("spark.hadoop.fs.s3a.endpoint", "http://100.85.61.29:19000")
     .config("spark.hadoop.fs.s3a.access.key", "admin")
-    .config("spark.hadoop.fs.s3a.secret.key", "password")
+    .config("spark.hadoop.fs.s3a.secret.key", "pass1234")
     .config("spark.hadoop.fs.s3a.path.style.access", "true")
     .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
     .getOrCreate()
@@ -196,7 +196,7 @@ Credenciales:
 
 ```text
 usuario: admin
-password: password
+password: pass1234
 ```
 
 Busca el bucket `warehouse` y los prefijos `iceberg/` y `polaris/`.

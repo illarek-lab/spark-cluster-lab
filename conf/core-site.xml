@@ -17,7 +17,7 @@
   <property>
     <!-- Debe coincidir con lab-password en compose.yaml (x-lab-credentials). -->
     <name>fs.s3a.secret.key</name>
-    <value>password</value>
+    <value>pass1234</value>
   </property>
   <property>
     <name>fs.s3a.path.style.access</name>
