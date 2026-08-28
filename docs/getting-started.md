@@ -27,7 +27,7 @@ Si algun puerto esta ocupado, edita el mapeo correspondiente en `compose.yaml`
 antes de levantar el stack. Puedes revisar los defaults con:
 
 ```bash
-for port in 17077 18080 18181 18182 19000 19001 19083 11000 11002 18123 19010 15433; do
+for port in 17077 18080 18181 18182 19000 19001 19083 11000 11002 18123 19010 15433 19870 18088; do
   ss -ltn "( sport = :$port )" | grep -q LISTEN && echo "$port ocupado" || echo "$port libre"
 done
 ```
@@ -41,7 +41,7 @@ docker compose ps
 Si algun servicio no queda en estado saludable o no arranca, revisa logs:
 
 ```bash
-docker compose logs --tail=100 spark-master spark-worker minio polaris hive-metastore hiveserver2 clickhouse
+docker compose logs --tail=100 spark-master spark-worker minio polaris hive-metastore hiveserver2 clickhouse hadoop-namenode yarn-resourcemanager
 ```
 
 ## 3. Revisar las UIs y endpoints
@@ -50,6 +50,8 @@ docker compose logs --tail=100 spark-master spark-worker minio polaris hive-meta
 | --- | --- | --- |
 | Spark Master UI | <http://localhost:18080> | Ver workers y aplicaciones. |
 | Spark Master | `spark://localhost:17077` | Endpoint para jobs Spark. |
+| YARN ResourceManager UI | <http://localhost:18088> | Ver aplicaciones y NodeManagers de YARN. |
+| HDFS NameNode UI | <http://localhost:19870> | Ver namespace HDFS y DataNodes. |
 | MinIO Console | <http://localhost:19001> | Ver buckets y objetos. |
 | Polaris REST Catalog | `http://localhost:18181/api/catalog` | Catalogo REST de Iceberg. |
 | Hive Metastore | `thrift://localhost:19083` | Catalogo Hive/Iceberg clasico. |
@@ -79,9 +81,14 @@ cluster Spark por cada herramienta.
 | Metadatos Hive | PostgreSQL `hive-postgres` | Volumen Docker `hive_postgres_data`. |
 | Datos ClickHouse | `/var/lib/clickhouse` | Volumen Docker `clickhouse_data`. |
 | Proyecto cliente | DDL, scripts, notebooks, datos sinteticos y jobs | Carpeta externa al repo de infraestructura. |
+| Metadata HDFS (NameNode) | HDFS interno, `hdfs://hadoop-namenode:8020` | Volumen Docker `hdfs_namenode_data`. |
 
-MinIO emula S3. Este Compose no levanta HDFS; Spark y Hive usan Hadoop S3A para
-leer y escribir objetos en MinIO.
+MinIO emula S3 y es el almacenamiento real del lakehouse en ambos modos
+(Standalone y YARN). Este Compose tambien levanta un HDFS propio
+(`hadoop-namenode` + `hadoop-datanode`), pero es efimero y solo sirve para el
+shuffle/staging interno de YARN (los DataNode no persisten datos entre
+reinicios). Spark y Hive siguen usando Hadoop S3A para leer y escribir tablas
+Iceberg/Hive en MinIO.
 
 El tamano de los nodos Spark worker se define en `compose.yaml`:
 
@@ -112,6 +119,19 @@ Tambien puedes abrir Spark SQL directamente:
 docker compose exec spark-master /opt/spark/bin/spark-sql \
   --master spark://spark-master:7077
 ```
+
+Para probar el mismo job contra YARN en vez de Standalone, usa
+`--master yarn` (o la variable `SPARK_MASTER_DEFAULT`, que ya viene fijada a
+`yarn`):
+
+```bash
+docker compose exec spark-master spark-submit --master $SPARK_MASTER_DEFAULT --version
+```
+
+Verifica en la UI de YARN (<http://localhost:18088>) que la aplicacion
+aparezca y que los `yarn-nodemanager` esten registrados. Enviar jobs en modo
+YARN solo funciona desde dentro de la red de Compose (`docker compose exec
+spark-master ...`), no desde un proyecto cliente externo.
 
 ## 6. Crear una tabla Iceberg con Hive Metastore
 

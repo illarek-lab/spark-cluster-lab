@@ -7,6 +7,13 @@ x-cluster-config:
   worker-count: &worker-count 4
   worker-memory: &worker-memory "8g"
   worker-cores: &worker-cores "3"
+  # Master usado por defecto al lanzar spark-submit/spark-sql sin --master
+  # explícito: "yarn" o "spark://spark-master:7077". Se expone como la
+  # variable de entorno SPARK_MASTER_DEFAULT dentro de spark-master, p.ej.:
+  #   docker compose exec spark-master spark-submit --master $SPARK_MASTER_DEFAULT ...
+  # yarn.nodemanager.resource.memory-mb/cpu-vcores en conf/hadoop/yarn-site.xml
+  # deben coincidir manualmente con worker-memory/worker-cores.
+  spark-master-default: &spark-master-default "yarn"
 
 x-minio-env: &minio-env
   MINIO_ROOT_USER: minioadmin
@@ -195,6 +202,78 @@ services:
         soft: 262144
         hard: 262144
 
+  hadoop-namenode:
+    image: spark-cluster-lab-hadoop:3.3.4
+    build:
+      context: .
+      dockerfile: docker/hadoop/Dockerfile
+    container_name: hadoop-namenode
+    hostname: hadoop-namenode
+    command: >
+      bash -lc "
+      [ -d /opt/hadoop/data/nameNode/current ] || hdfs namenode -format -force -nonInteractive;
+      exec hdfs namenode
+      "
+    ports:
+      - "19870:9870"
+    volumes:
+      - hdfs_namenode_data:/opt/hadoop/data/nameNode
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:9870/dfshealth.html"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  hadoop-datanode:
+    image: spark-cluster-lab-hadoop:3.3.4
+    build:
+      context: .
+      dockerfile: docker/hadoop/Dockerfile
+    depends_on:
+      hadoop-namenode:
+        condition: service_healthy
+    command: >
+      bash -lc "exec hdfs datanode"
+    deploy:
+      replicas: *worker-count
+
+  yarn-resourcemanager:
+    image: spark-cluster-lab-hadoop:3.3.4
+    build:
+      context: .
+      dockerfile: docker/hadoop/Dockerfile
+    container_name: yarn-resourcemanager
+    hostname: yarn-resourcemanager
+    depends_on:
+      hadoop-namenode:
+        condition: service_healthy
+    command: >
+      bash -lc "exec yarn resourcemanager"
+    ports:
+      - "18088:8088"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8088/cluster"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  yarn-nodemanager:
+    image: spark-cluster-lab-hadoop:3.3.4
+    build:
+      context: .
+      dockerfile: docker/hadoop/Dockerfile
+    depends_on:
+      yarn-resourcemanager:
+        condition: service_healthy
+      hadoop-datanode:
+        condition: service_started
+    command: >
+      bash -lc "exec yarn nodemanager"
+    deploy:
+      replicas: *worker-count
+
   spark-master:
     build:
       context: .
@@ -211,6 +290,13 @@ services:
         condition: service_completed_successfully
       polaris-setup:
         condition: service_completed_successfully
+      yarn-resourcemanager:
+        condition: service_healthy
+
+    environment:
+      SPARK_MASTER_DEFAULT: *spark-master-default
+      HADOOP_CONF_DIR: /opt/hadoop-conf
+      YARN_CONF_DIR: /opt/hadoop-conf
 
     command: >
       /opt/spark/bin/spark-class
@@ -222,6 +308,7 @@ services:
 
     volumes:
       - ./conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
+      - ./conf/hadoop:/opt/hadoop-conf:ro
 
   spark-worker:
 
@@ -257,3 +344,4 @@ volumes:
   hive_postgres_data:
   clickhouse_data:
   clickhouse_logs:
+  hdfs_namenode_data:

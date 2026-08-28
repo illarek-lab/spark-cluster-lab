@@ -64,7 +64,7 @@ indicados en [Servicios disponibles](#servicios-disponibles).
 Antes de levantar el stack, revisa si los puertos estan libres en el servidor:
 
 ```bash
-for port in 17077 18080 18181 18182 19000 19001 19083 11000 11002 18123 19010 15433; do
+for port in 17077 18080 18181 18182 19000 19001 19083 11000 11002 18123 19010 15433 19870 18088; do
   ss -ltn "( sport = :$port )" | grep -q LISTEN && echo "$port ocupado" || echo "$port libre"
 done
 ```
@@ -87,6 +87,8 @@ por ejemplo `minio:9000`, `spark-master:7077` y `clickhouse:9000`.
 | `18123` | `8123` | ClickHouse HTTP |
 | `19010` | `9000` | ClickHouse Native |
 | `15433` | `5432` | PostgreSQL del metastore |
+| `19870` | `9870` | HDFS NameNode UI |
+| `18088` | `8088` | YARN ResourceManager UI |
 
 Los valores del clúster no son secretos, así que viven versionados dentro de
 `compose.yaml`, en el bloque `x-cluster-config` (usa anchors YAML `&`/`*` en
@@ -134,6 +136,42 @@ docker compose down
 docker compose up --build -d
 ```
 
+## Spark Standalone y YARN
+
+El clúster levanta dos cluster managers a la vez, para poder comparar o
+practicar con ambos:
+
+- **Spark Standalone**: servicios `spark-master`/`spark-worker`. Endpoint
+  `spark://spark-master:7077` (o `spark://<host>:17077` desde fuera).
+- **YARN**: servicios `hadoop-namenode`, `hadoop-datanode` (uno por worker,
+  `deploy.replicas: *worker-count`), `yarn-resourcemanager` y
+  `yarn-nodemanager` (también `*worker-count` réplicas). ResourceManager UI en
+  `http://localhost:18088`, HDFS NameNode UI en `http://localhost:19870`.
+
+`x-cluster-config.spark-master-default` fija cuál usar por defecto ("yarn" o
+`spark://spark-master:7077`) y se expone como la variable de entorno
+`SPARK_MASTER_DEFAULT` dentro de `spark-master`:
+
+```bash
+docker compose exec spark-master spark-submit --master $SPARK_MASTER_DEFAULT --version
+```
+
+`yarn.nodemanager.resource.memory-mb`/`cpu-vcores` en
+`conf/hadoop/yarn-site.xml` están fijados a `8192`/`3` para que coincidan con
+`worker-memory`/`worker-cores`. Si cambias esos valores en `x-cluster-config`,
+actualízalos también ahí a mano.
+
+**HDFS es efímero y solo para el shuffle/staging de YARN**: los `hadoop-datanode`
+no tienen volumen persistente (se reinician limpios), y el almacenamiento
+real del lakehouse sigue siendo MinIO/S3A vía `s3a://warehouse` en ambos
+modos. Solo el NameNode persiste su metadata (`hdfs_namenode_data`).
+
+**Enviar jobs en modo YARN solo funciona dentro de la red de Compose**
+(`docker compose exec spark-master ...`), porque el cliente necesita alcanzar
+`yarn-resourcemanager` y cada `yarn-nodemanager` por su hostname interno. A
+diferencia de Standalone (`spark://<host>:17077`), YARN no está pensado para
+enviar jobs desde un proyecto cliente externo a la red de Docker.
+
 ## Estructura de carpetas y archivos
 
 ### Archivos de la raíz
@@ -166,6 +204,10 @@ lab en MinIO/volúmenes Docker.
 - `docker/hive/Dockerfile`: construye la imagen usada por Hive Metastore y
   HiveServer2. Parte de Java 8, descarga `apache-hive-3.1.0-bin.tar.gz` desde
   el archivo oficial de Apache y agrega el driver PostgreSQL y JARs S3A.
+- `docker/hadoop/Dockerfile`: construye la imagen usada por NameNode,
+  DataNode, ResourceManager y NodeManager. Parte de Java 8, descarga
+  `hadoop-3.3.4.tar.gz` desde el archivo oficial de Apache y usa las XML de
+  `conf/hadoop/`.
 
 ## Herramientas y componentes incluidos
 
@@ -193,9 +235,15 @@ lab en MinIO/volúmenes Docker.
 | HiveServer2 | Hive `3.1.0` | Servicio `hiveserver2` | Endpoint SQL Hive/Beeline para pruebas con Hive. |
 | PostgreSQL | `16-alpine` | Servicio `hive-postgres` | Base de datos persistente para metadatos del metastore. |
 | ClickHouse | `24.8.4.13` | Servicio `clickhouse` | Base columnar para analítica y pruebas de integración. |
+| Hadoop | `3.3.4` | Imagen `spark-cluster-lab-hadoop:3.3.4` | Binarios HDFS y YARN. |
+| HDFS NameNode | `hdfs namenode` | Servicio `hadoop-namenode` | Coordina el namespace y los DataNode de HDFS. |
+| HDFS DataNode | `hdfs datanode` | Servicio `hadoop-datanode` (`*worker-count` réplicas) | Almacena bloques HDFS efímeros para el shuffle/staging de YARN. |
+| YARN ResourceManager | `yarn resourcemanager` | Servicio `yarn-resourcemanager` | Asigna recursos y agenda aplicaciones YARN. |
+| YARN NodeManager | `yarn nodemanager` | Servicio `yarn-nodemanager` (`*worker-count` réplicas) | Ejecuta contenedores YARN con la memoria/cores de `yarn-site.xml`. |
 | Volumen `minio_data` | Volumen Docker | `/data` en MinIO | Persistir objetos S3, incluyendo `s3a://warehouse/iceberg`. |
 | Volumen `hive_postgres_data` | Volumen Docker | PostgreSQL | Persistir metadatos de bases, tablas y particiones. |
 | Volumen `clickhouse_data` | Volumen Docker | ClickHouse | Persistir bases y tablas de ClickHouse. |
+| Volumen `hdfs_namenode_data` | Volumen Docker | HDFS NameNode | Persistir la metadata del namespace HDFS entre reinicios. |
 
 ## Arrancar todo
 
@@ -220,6 +268,8 @@ Servicios disponibles:
 | --- | --- | --- | --- |
 | Spark Master UI | <http://localhost:18080> | `http://spark-master:8080` | Ver workers y aplicaciones. |
 | Spark Master | `spark://localhost:17077` | `spark://spark-master:7077` | Enviar jobs Spark. |
+| YARN ResourceManager UI | <http://localhost:18088> | `http://yarn-resourcemanager:8088` | Ver aplicaciones y NodeManagers de YARN. |
+| HDFS NameNode UI | <http://localhost:19870> | `http://hadoop-namenode:9870` | Ver namespace HDFS y DataNodes. |
 | MinIO S3 API | `http://localhost:19000` | `http://minio:9000` | Almacenamiento S3 compatible. |
 | MinIO Console | <http://localhost:19001> | `http://minio:9001` | UI web de buckets y objetos. |
 | Polaris REST Catalog | `http://localhost:18181/api/catalog` | `http://polaris:8181/api/catalog` | Catálogo Iceberg vía REST. |
@@ -244,7 +294,7 @@ Comprueba que los servicios estén levantados:
 
 ```bash
 docker compose ps
-docker compose logs --tail=100 spark-master spark-worker polaris hive-metastore minio clickhouse
+docker compose logs --tail=100 spark-master spark-worker polaris hive-metastore minio clickhouse hadoop-namenode yarn-resourcemanager
 ```
 
 En la UI del master debe aparecer un worker conectado.
@@ -534,13 +584,13 @@ docker compose down -v
 Si algún puerto está ocupado, detén el proceso que lo usa o cambia el mapeo de
 puertos en `compose.yaml`. Los puertos publicados por defecto son `17077`, `18080`,
 `18181`, `18182`, `19000`, `19001`, `19083`, `11000`, `11002`, `18123`,
-`19010` y `15433`.
+`19010`, `15433`, `19870` y `18088`.
 
 Si el worker no aparece en la UI o alguno de los servicios no arranca, revisa
 los logs:
 
 ```bash
-docker compose logs spark-master spark-worker hive-metastore hiveserver2 minio clickhouse
+docker compose logs spark-master spark-worker hive-metastore hiveserver2 minio clickhouse hadoop-namenode hadoop-datanode yarn-resourcemanager yarn-nodemanager
 ```
 
 Para reconstruir la imagen sin caché:
