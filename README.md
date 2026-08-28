@@ -10,6 +10,10 @@ vivir fuera de aquí.
 
 - [Como comenzar](docs/getting-started.md): guia paso a paso para levantar el
   stack y probar Spark, Iceberg, Polaris, Hive, MinIO y ClickHouse.
+- [dashboard.html](dashboard.html): panel visual con los endpoints, URLs y
+  credenciales de todos los servicios, con chequeo de estado en vivo desde el
+  navegador. Ábrelo directamente (`file://`) o sírvelo con cualquier servidor
+  estático.
 - [Usar desde otro proyecto](docs/external-project.md): guia para conectar un
   proyecto cliente, como `spark-cluster-lab-test`, al servidor `100.85.61.29`.
 - [Configuración del clúster](#configuración-del-clúster): tamaño de workers y

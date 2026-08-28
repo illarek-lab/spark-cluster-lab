@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Spark Cluster Lab &mdash; Dashboard</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #0f1420;
+    --panel: #171d2b;
+    --panel-border: #262e42;
+    --text: #e7ebf3;
+    --muted: #8993a8;
+    --accent: #5b8cff;
+    --ok: #35c98f;
+    --bad: #ff5d6c;
+    --pending: #e8b64a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 2rem 1.25rem 4rem;
+  }
+  header {
+    max-width: 980px;
+    margin: 0 auto 1.75rem;
+  }
+  h1 {
+    font-size: 1.5rem;
+    margin: 0 0 0.35rem;
+  }
+  header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .toolbar {
+    max-width: 980px;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .toolbar button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 0.5rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .toolbar button:hover { filter: brightness(1.08); }
+  .toolbar .status-summary {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .toolbar label {
+    font-size: 0.85rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  main {
+    max-width: 980px;
+    margin: 0 auto;
+    display: grid;
+    gap: 1.25rem;
+  }
+  section h2 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 0 0 0.6rem;
+    padding-left: 0.1rem;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .card-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+    transition: background 0.2s ease;
+  }
+  .dot[data-state="ok"] { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+  .dot[data-state="bad"] { background: var(--bad); }
+  .dot[data-state="pending"] { background: var(--pending); }
+  .dot[data-state="na"] { background: var(--panel-border); }
+  .card-url {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    color: var(--accent);
+    word-break: break-all;
+    text-decoration: none;
+  }
+  .card-url:hover { text-decoration: underline; }
+  .card-url.text-only {
+    color: var(--muted);
+    cursor: default;
+  }
+  .card-desc {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .card-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.15rem;
+  }
+  .copy-btn {
+    background: transparent;
+    border: 1px solid var(--panel-border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.72rem;
+    cursor: pointer;
+  }
+  .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+  .creds {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    font-size: 0.85rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.5rem 1.5rem;
+  }
+  .creds div span.k { color: var(--muted); }
+  footer {
+    max-width: 980px;
+    margin: 2rem auto 0;
+    color: var(--muted);
+    font-size: 0.75rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Spark Cluster Lab &mdash; Servicios</h1>
+  <p>Servidor <code>100.85.61.29</code>. Los puntos indican si el servicio responde ahora mismo.</p>
+</header>
+
+<div class="toolbar">
+  <button id="refresh-btn">Revisar ahora</button>
+  <label><input type="checkbox" id="auto-refresh" checked /> Auto-actualizar cada 15s</label>
+  <span class="status-summary" id="status-summary"></span>
+</div>
+
+<main id="sections"></main>
+
+<footer>Generado para spark-cluster-lab. El chequeo se hace desde tu navegador con fetch en modo no-cors: solo confirma si el puerto responde, no valida contenido.</footer>
+
+<script>
+const DATA = [
+  {
+    group: "Spark",
+    services: [
+      { name: "Spark Master UI", url: "http://100.85.61.29:18080", desc: "Estado del clúster, workers y aplicaciones.", checkable: true },
+      { name: "Spark Master (Standalone)", url: "spark://100.85.61.29:17077", desc: "Endpoint para spark-submit / SparkSession.", checkable: false },
+    ],
+  },
+  {
+    group: "YARN / HDFS",
+    services: [
+      { name: "YARN ResourceManager UI", url: "http://100.85.61.29:18088", desc: "Aplicaciones y NodeManagers de YARN.", checkable: true },
+      { name: "HDFS NameNode UI", url: "http://100.85.61.29:19870", desc: "Namespace HDFS y DataNodes (efímero).", checkable: true },
+    ],
+  },
+  {
+    group: "MinIO",
+    services: [
+      { name: "MinIO Console", url: "http://100.85.61.29:19001", desc: "UI web de buckets y objetos (admin/pass1234).", checkable: true },
+      { name: "MinIO S3 API", url: "http://100.85.61.29:19000", desc: "Endpoint S3 compatible para s3a://warehouse.", checkable: true },
+    ],
+  },
+  {
+    group: "Polaris",
+    services: [
+      { name: "Polaris REST Catalog", url: "http://100.85.61.29:18181/api/catalog", desc: "Catálogo Iceberg polaris.", checkable: true },
+      { name: "Polaris Management", url: "http://100.85.61.29:18181/api/management/v1", desc: "Administración de catálogos y principals.", checkable: true },
+      { name: "Polaris Health", url: "http://100.85.61.29:18182/q/health", desc: "Healthcheck y métricas internas.", checkable: true },
+    ],
+  },
+  {
+    group: "Hive",
+    services: [
+      { name: "Hive Metastore", url: "thrift://100.85.61.29:19083", desc: "Catálogo Iceberg iceberg (Thrift).", checkable: false },
+      { name: "HiveServer2 JDBC", url: "jdbc:hive2://100.85.61.29:11000", desc: "SQL Hive/Beeline.", checkable: false },
+      { name: "HiveServer2 UI", url: "http://100.85.61.29:11002", desc: "Estado de HiveServer2.", checkable: true },
+    ],
+  },
+  {
+    group: "ClickHouse",
+    services: [
+      { name: "ClickHouse HTTP", url: "http://100.85.61.29:18123", desc: "Consultas y cargas vía HTTP.", checkable: true },
+      { name: "ClickHouse Play UI", url: "http://100.85.61.29:18123/play?user=admin&password=pass1234", desc: "Consola SQL interactiva.", checkable: false },
+      { name: "ClickHouse Native", url: "100.85.61.29:19010", desc: "Puerto del cliente nativo (no es http).", checkable: false },
+    ],
+  },
+  {
+    group: "PostgreSQL",
+    services: [
+      { name: "PostgreSQL Metastore", url: "100.85.61.29:15433", desc: "Metadatos internos de Hive (admin/pass1234).", checkable: false },
+    ],
+  },
+];
+
+const sectionsEl = document.getElementById("sections");
+const summaryEl = document.getElementById("status-summary");
+const dots = [];
+
+function buildCard(service) {
+  const card = document.createElement("div");
+  card.className = "card";
+
+  const top = document.createElement("div");
+  top.className = "card-top";
+
+  const name = document.createElement("span");
+  name.className = "card-name";
+  name.textContent = service.name;
+
+  const dot = document.createElement("span");
+  dot.className = "dot";
+  dot.dataset.state = service.checkable ? "pending" : "na";
+  dot.title = service.checkable ? "Comprobando..." : "No verificable desde el navegador";
+
+  top.appendChild(name);
+  top.appendChild(dot);
+
+  const url = document.createElement(service.checkable ? "a" : "span");
+  url.className = "card-url" + (service.checkable ? "" : " text-only");
+  url.textContent = service.url;
+  if (service.checkable) {
+    url.href = service.url;
+    url.target = "_blank";
+    url.rel = "noopener noreferrer";
+  }
+
+  const desc = document.createElement("div");
+  desc.className = "card-desc";
+  desc.textContent = service.desc;
+
+  const actions = document.createElement("div");
+  actions.className = "card-actions";
+  const copyBtn = document.createElement("button");
+  copyBtn.className = "copy-btn";
+  copyBtn.textContent = "Copiar";
+  copyBtn.onclick = () => {
+    navigator.clipboard.writeText(service.url).then(() => {
+      copyBtn.textContent = "Copiado";
+      setTimeout(() => (copyBtn.textContent = "Copiar"), 1200);
+    });
+  };
+  actions.appendChild(copyBtn);
+
+  card.appendChild(top);
+  card.appendChild(url);
+  card.appendChild(desc);
+  card.appendChild(actions);
+
+  if (service.checkable) {
+    dots.push({ dot, url: service.url });
+  }
+
+  return card;
+}
+
+DATA.forEach(group => {
+  const section = document.createElement("section");
+  const h2 = document.createElement("h2");
+  h2.textContent = group.group;
+  const grid = document.createElement("div");
+  grid.className = "grid";
+  group.services.forEach(s => grid.appendChild(buildCard(s)));
+  section.appendChild(h2);
+  section.appendChild(grid);
+  sectionsEl.appendChild(section);
+});
+
+const creds = document.createElement("div");
+creds.className = "creds";
+creds.innerHTML = `
+  <div><span class="k">MinIO:</span> admin / pass1234</div>
+  <div><span class="k">Polaris root:</span> admin / pass1234</div>
+  <div><span class="k">Hive PostgreSQL:</span> admin / pass1234</div>
+  <div><span class="k">ClickHouse:</span> admin / pass1234 (usuario "default" eliminado)</div>
+`;
+sectionsEl.appendChild(creds);
+
+async function pingOne(entry) {
+  entry.dot.dataset.state = "pending";
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 3000);
+  try {
+    await fetch(entry.url, { mode: "no-cors", cache: "no-store", signal: controller.signal });
+    entry.dot.dataset.state = "ok";
+    entry.dot.title = "Responde";
+  } catch (err) {
+    entry.dot.dataset.state = "bad";
+    entry.dot.title = "No responde (timeout o conexión rechazada)";
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function pingAll() {
+  summaryEl.textContent = "Comprobando...";
+  await Promise.all(dots.map(pingOne));
+  const up = dots.filter(d => d.dot.dataset.state === "ok").length;
+  summaryEl.textContent = `${up}/${dots.length} servicios responden · ${new Date().toLocaleTimeString()}`;
+}
+
+document.getElementById("refresh-btn").addEventListener("click", pingAll);
+
+let timer = null;
+function scheduleAuto() {
+  if (timer) clearInterval(timer);
+  if (document.getElementById("auto-refresh").checked) {
+    timer = setInterval(pingAll, 15000);
+  }
+}
+document.getElementById("auto-refresh").addEventListener("change", scheduleAuto);
+
+pingAll();
+scheduleAuto();
+</script>
+
+</body>
+</html>
