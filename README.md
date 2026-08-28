@@ -538,7 +538,7 @@ spark = (
 
 Este clúster expone MinIO como almacenamiento remoto S3 compatible. Para
 proyectos externos, usa `http://<host>:19000` como endpoint S3, bucket
-`warehouse`, access key `admin` y secret key `password`. Si el proyecto
+`warehouse`, access key `admin` y secret key `pass1234`. Si el proyecto
 corre fuera de la red de Compose, usa `spark://<host>:17077`,
 `thrift://<host>:19083` y `s3a://warehouse/iceberg` con endpoint
 `http://<host>:19000`.
