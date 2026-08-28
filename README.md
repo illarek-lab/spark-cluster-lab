@@ -49,15 +49,44 @@ docker compose up --build -d
 docker compose ps
 ```
 
-La interfaz web estará disponible en `http://100.85.61.29:8080` si el puerto
+La interfaz web estará disponible en `http://100.85.61.29:18080` si el puerto
 está permitido por el firewall y la red del servidor. El endpoint Spark será
-`spark://100.85.61.29:7077` para clientes externos. Desde los propios
+`spark://100.85.61.29:17077` para clientes externos. Desde los propios
 contenedores se usa `spark://spark-master:7077`.
 
 También quedan disponibles MinIO, Polaris, Hive y ClickHouse en los puertos
 indicados en [Servicios disponibles](#servicios-disponibles).
 
 ## Configuración del clúster
+
+## Puertos publicados
+
+Antes de levantar el stack, revisa si los puertos estan libres en el servidor:
+
+```bash
+for port in 17077 18080 18181 18182 19000 19001 19083 11000 11002 18123 19010 15433; do
+  ss -ltn "( sport = :$port )" | grep -q LISTEN && echo "$port ocupado" || echo "$port libre"
+done
+```
+
+Si alguno aparece ocupado, edita el mapeo correspondiente en `compose.yaml`.
+Dentro de Compose los servicios siguen usando sus nombres y puertos internos,
+por ejemplo `minio:9000`, `spark-master:7077` y `clickhouse:9000`.
+
+| Puerto externo | Puerto interno | Servicio |
+| ---: | ---: | --- |
+| `17077` | `7077` | Spark Standalone |
+| `18080` | `8080` | Spark Master UI |
+| `19000` | `9000` | MinIO S3 API |
+| `19001` | `9001` | MinIO Console |
+| `18181` | `8181` | Polaris REST Catalog |
+| `18182` | `8182` | Polaris health/metrics |
+| `19083` | `9083` | Hive Metastore |
+| `11000` | `10000` | HiveServer2 JDBC |
+| `11002` | `10002` | HiveServer2 UI |
+| `18123` | `8123` | ClickHouse HTTP |
+| `19010` | `9000` | ClickHouse Native |
+| `15433` | `5432` | PostgreSQL del metastore |
 
 Los valores del clúster no son secretos, así que viven versionados dentro de
 `compose.yaml`, en el bloque `x-cluster-config` (usa anchors YAML `&`/`*` en
@@ -114,10 +143,8 @@ docker compose up --build -d
   número de réplicas del worker y sus límites de RAM/CPU mediante anchors
   YAML reutilizados en `deploy.replicas`, `mem_limit`, `cpus` y el comando
   `spark-class`.
-- `.env`: no existe en este repositorio; la configuración del clúster no es
-  secreta y está versionada directamente en `compose.yaml`.
-- `.gitignore`: evita subir archivos generados y entornos virtuales; conserva
-  reglas para `.env` por si en el futuro se necesita alguno con secretos.
+- `.gitignore`: evita subir archivos generados, entornos virtuales y `.env` por
+  si en el futuro se necesita alguno con secretos.
 - `README.md`: instrucciones de instalación, despliegue y operación.
 
 ### Carpetas de datos y ejecución
@@ -196,18 +223,18 @@ Servicios disponibles:
 
 | Servicio | URL o endpoint desde el host | Endpoint interno Compose | Uso |
 | --- | --- | --- | --- |
-| Spark Master UI | <http://localhost:8080> | `http://spark-master:8080` | Ver workers y aplicaciones. |
-| Spark Master | `spark://localhost:7077` | `spark://spark-master:7077` | Enviar jobs Spark. |
-| MinIO S3 API | `http://localhost:9003` | `http://minio:9000` | Almacenamiento S3 compatible. |
-| MinIO Console | <http://localhost:9001> | `http://minio:9001` | UI web de buckets y objetos. |
-| Polaris REST Catalog | `http://localhost:8181/api/catalog` | `http://polaris:8181/api/catalog` | Catálogo Iceberg vía REST. |
-| Polaris Management | `http://localhost:8181/api/management/v1` | `http://polaris:8181/api/management/v1` | Administración de catálogos y principals. |
-| Polaris Health/Metrics | <http://localhost:8182/q/health> | `http://polaris:8182` | Healthcheck y métricas internas. |
-| Hive Metastore | `thrift://localhost:9083` | `thrift://hive-metastore:9083` | Catálogo de tablas. |
-| HiveServer2 | `jdbc:hive2://localhost:10000` | `jdbc:hive2://hiveserver2:10000` | SQL Hive/Beeline. |
-| HiveServer2 UI | <http://localhost:10002> | `http://hiveserver2:10002` | UI web de HiveServer2. |
-| ClickHouse HTTP | <http://localhost:8123> | `http://clickhouse:8123` | API HTTP de ClickHouse. |
-| ClickHouse Native | `localhost:9010` | `clickhouse:9000` | Cliente nativo de ClickHouse. |
+| Spark Master UI | <http://localhost:18080> | `http://spark-master:8080` | Ver workers y aplicaciones. |
+| Spark Master | `spark://localhost:17077` | `spark://spark-master:7077` | Enviar jobs Spark. |
+| MinIO S3 API | `http://localhost:19000` | `http://minio:9000` | Almacenamiento S3 compatible. |
+| MinIO Console | <http://localhost:19001> | `http://minio:9001` | UI web de buckets y objetos. |
+| Polaris REST Catalog | `http://localhost:18181/api/catalog` | `http://polaris:8181/api/catalog` | Catálogo Iceberg vía REST. |
+| Polaris Management | `http://localhost:18181/api/management/v1` | `http://polaris:8181/api/management/v1` | Administración de catálogos y principals. |
+| Polaris Health/Metrics | <http://localhost:18182/q/health> | `http://polaris:8182` | Healthcheck y métricas internas. |
+| Hive Metastore | `thrift://localhost:19083` | `thrift://hive-metastore:9083` | Catálogo de tablas. |
+| HiveServer2 | `jdbc:hive2://localhost:11000` | `jdbc:hive2://hiveserver2:10000` | SQL Hive/Beeline. |
+| HiveServer2 UI | <http://localhost:11002> | `http://hiveserver2:10002` | UI web de HiveServer2. |
+| ClickHouse HTTP | <http://localhost:18123> | `http://clickhouse:8123` | API HTTP de ClickHouse. |
+| ClickHouse Native | `localhost:19010` | `clickhouse:9000` | Cliente nativo de ClickHouse. |
 
 Credenciales locales:
 
@@ -435,11 +462,11 @@ spark = (
 ```
 
 Este clúster expone MinIO como almacenamiento remoto S3 compatible. Para
-proyectos externos, usa `http://<host>:9003` como endpoint S3, bucket
+proyectos externos, usa `http://<host>:19000` como endpoint S3, bucket
 `warehouse`, access key `minioadmin` y secret key `minioadmin`. Si el proyecto
-corre fuera de la red de Compose, usa `spark://<host>:7077`,
-`thrift://<host>:9083` y `s3a://warehouse/iceberg` con endpoint
-`http://<host>:9003`.
+corre fuera de la red de Compose, usa `spark://<host>:17077`,
+`thrift://<host>:19083` y `s3a://warehouse/iceberg` con endpoint
+`http://<host>:19000`.
 
 ## Parar y limpiar
 
@@ -519,9 +546,9 @@ rm -rf data/* warehouse/*
 ## Solución rápida de problemas
 
 Si algún puerto está ocupado, detén el proceso que lo usa o cambia el mapeo de
-puertos en `compose.yaml`. Los puertos publicados por defecto son `7077`,
-`8080`, `8181`, `8182`, `9001`, `9003`, `9010`, `9083`, `10000`, `10002`, `8123`,
-y `5433`.
+puertos en `compose.yaml`. Los puertos publicados por defecto son `17077`, `18080`,
+`18181`, `18182`, `19000`, `19001`, `19083`, `11000`, `11002`, `18123`,
+`19010` y `15433`.
 
 Si el worker no aparece en la UI o alguno de los servicios no arranca, revisa
 los logs:

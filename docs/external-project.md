@@ -28,15 +28,15 @@ Servicios clave que deben estar arriba:
 
 | Servicio | Endpoint desde el proyecto cliente |
 | --- | --- |
-| Spark Master | `spark://100.85.61.29:7077` |
-| Spark Master UI | `http://100.85.61.29:8080` |
-| MinIO S3 API | `http://100.85.61.29:9003` |
-| MinIO Console | `http://100.85.61.29:9001` |
-| Polaris REST Catalog | `http://100.85.61.29:8181/api/catalog` |
-| Hive Metastore | `thrift://100.85.61.29:9083` |
-| HiveServer2 | `jdbc:hive2://100.85.61.29:10000` |
-| ClickHouse HTTP | `http://100.85.61.29:8123` |
-| ClickHouse Native | `100.85.61.29:9010` |
+| Spark Master | `spark://100.85.61.29:17077` |
+| Spark Master UI | `http://100.85.61.29:18080` |
+| MinIO S3 API | `http://100.85.61.29:19000` |
+| MinIO Console | `http://100.85.61.29:19001` |
+| Polaris REST Catalog | `http://100.85.61.29:18181/api/catalog` |
+| Hive Metastore | `thrift://100.85.61.29:19083` |
+| HiveServer2 | `jdbc:hive2://100.85.61.29:11000` |
+| ClickHouse HTTP | `http://100.85.61.29:18123` |
+| ClickHouse Native | `100.85.61.29:19010` |
 
 ## 2. Entrar al proyecto cliente
 
@@ -54,17 +54,17 @@ prueba. No necesita definir otro `docker compose` para Spark.
 Usa estas variables en scripts o `.env` del proyecto cliente:
 
 ```bash
-export SPARK_MASTER_URL=spark://100.85.61.29:7077
-export MINIO_ENDPOINT=http://100.85.61.29:9003
+export SPARK_MASTER_URL=spark://100.85.61.29:17077
+export MINIO_ENDPOINT=http://100.85.61.29:19000
 export MINIO_ACCESS_KEY=minioadmin
 export MINIO_SECRET_KEY=minioadmin
-export HIVE_METASTORE_URI=thrift://100.85.61.29:9083
-export POLARIS_CATALOG_URI=http://100.85.61.29:8181/api/catalog
+export HIVE_METASTORE_URI=thrift://100.85.61.29:19083
+export POLARIS_CATALOG_URI=http://100.85.61.29:18181/api/catalog
 export POLARIS_WAREHOUSE=lakehouse
 export POLARIS_CREDENTIAL=root:s3cr3t
 export CLICKHOUSE_HOST=100.85.61.29
-export CLICKHOUSE_HTTP_PORT=8123
-export CLICKHOUSE_NATIVE_PORT=9010
+export CLICKHOUSE_HTTP_PORT=18123
+export CLICKHOUSE_NATIVE_PORT=19010
 ```
 
 ## 4. Dependencias del proyecto cliente
@@ -90,22 +90,22 @@ from pyspark.sql import SparkSession
 spark = (
     SparkSession.builder
     .appName("spark-cluster-lab-test")
-    .master(os.getenv("SPARK_MASTER_URL", "spark://100.85.61.29:7077"))
+    .master(os.getenv("SPARK_MASTER_URL", "spark://100.85.61.29:17077"))
     .config(
         "spark.sql.extensions",
         "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
     )
     .config("spark.sql.catalog.iceberg", "org.apache.iceberg.spark.SparkCatalog")
     .config("spark.sql.catalog.iceberg.type", "hive")
-    .config("spark.sql.catalog.iceberg.uri", "thrift://100.85.61.29:9083")
+    .config("spark.sql.catalog.iceberg.uri", "thrift://100.85.61.29:19083")
     .config("spark.sql.catalog.iceberg.warehouse", "s3a://warehouse/iceberg")
     .config("spark.sql.catalog.polaris", "org.apache.iceberg.spark.SparkCatalog")
     .config("spark.sql.catalog.polaris.catalog-impl", "org.apache.iceberg.rest.RESTCatalog")
-    .config("spark.sql.catalog.polaris.uri", "http://100.85.61.29:8181/api/catalog")
+    .config("spark.sql.catalog.polaris.uri", "http://100.85.61.29:18181/api/catalog")
     .config("spark.sql.catalog.polaris.warehouse", "lakehouse")
     .config("spark.sql.catalog.polaris.credential", "root:s3cr3t")
     .config("spark.sql.catalog.polaris.scope", "PRINCIPAL_ROLE:ALL")
-    .config("spark.hadoop.fs.s3a.endpoint", "http://100.85.61.29:9003")
+    .config("spark.hadoop.fs.s3a.endpoint", "http://100.85.61.29:19000")
     .config("spark.hadoop.fs.s3a.access.key", "minioadmin")
     .config("spark.hadoop.fs.s3a.secret.key", "minioadmin")
     .config("spark.hadoop.fs.s3a.path.style.access", "true")
@@ -186,7 +186,7 @@ spark.sql("SELECT count(*) FROM polaris.lab.synthetic_events").show()
 MinIO:
 
 ```text
-http://100.85.61.29:9001
+http://100.85.61.29:19001
 ```
 
 Credenciales:
@@ -201,7 +201,7 @@ Busca el bucket `warehouse` y los prefijos `iceberg/` y `polaris/`.
 Spark UI:
 
 ```text
-http://100.85.61.29:8080
+http://100.85.61.29:18080
 ```
 
 ## 9. Probar ClickHouse desde el proyecto cliente
@@ -209,11 +209,11 @@ http://100.85.61.29:8080
 Consulta rapida por HTTP:
 
 ```bash
-curl 'http://100.85.61.29:8123/?query=SELECT%201'
+curl 'http://100.85.61.29:18123/?query=SELECT%201'
 ```
 
 Si tu proyecto necesita cargar datos en ClickHouse, usa el endpoint HTTP
-`http://100.85.61.29:8123` o el puerto nativo `100.85.61.29:9010`.
+`http://100.85.61.29:18123` o el puerto nativo `100.85.61.29:19010`.
 
 ## 10. Regla importante
 
@@ -221,7 +221,7 @@ El proyecto cliente no debe crear otro cluster Spark. Debe conectarse al cluster
 existente:
 
 ```text
-spark://100.85.61.29:7077
+spark://100.85.61.29:17077
 ```
 
 El tamano real del cluster se controla solo en `spark-cluster-lab/compose.yaml`:

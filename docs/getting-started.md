@@ -23,6 +23,15 @@ Construye las imagenes locales de Spark/Hive y levanta todos los servicios:
 docker compose up --build -d
 ```
 
+Si algun puerto esta ocupado, edita el mapeo correspondiente en `compose.yaml`
+antes de levantar el stack. Puedes revisar los defaults con:
+
+```bash
+for port in 17077 18080 18181 18182 19000 19001 19083 11000 11002 18123 19010 15433; do
+  ss -ltn "( sport = :$port )" | grep -q LISTEN && echo "$port ocupado" || echo "$port libre"
+done
+```
+
 Verifica el estado:
 
 ```bash
@@ -39,14 +48,14 @@ docker compose logs --tail=100 spark-master spark-worker minio polaris hive-meta
 
 | Servicio | Desde el host | Uso |
 | --- | --- | --- |
-| Spark Master UI | <http://localhost:8080> | Ver workers y aplicaciones. |
-| Spark Master | `spark://localhost:7077` | Endpoint para jobs Spark. |
-| MinIO Console | <http://localhost:9001> | Ver buckets y objetos. |
-| Polaris REST Catalog | `http://localhost:8181/api/catalog` | Catalogo REST de Iceberg. |
-| Hive Metastore | `thrift://localhost:9083` | Catalogo Hive/Iceberg clasico. |
-| HiveServer2 | `jdbc:hive2://localhost:10000` | SQL con Beeline/JDBC. |
-| ClickHouse HTTP | <http://localhost:8123> | Consultas HTTP. |
-| ClickHouse Native | `localhost:9010` | Cliente nativo. |
+| Spark Master UI | <http://localhost:18080> | Ver workers y aplicaciones. |
+| Spark Master | `spark://localhost:17077` | Endpoint para jobs Spark. |
+| MinIO Console | <http://localhost:19001> | Ver buckets y objetos. |
+| Polaris REST Catalog | `http://localhost:18181/api/catalog` | Catalogo REST de Iceberg. |
+| Hive Metastore | `thrift://localhost:19083` | Catalogo Hive/Iceberg clasico. |
+| HiveServer2 | `jdbc:hive2://localhost:11000` | SQL con Beeline/JDBC. |
+| ClickHouse HTTP | <http://localhost:18123> | Consultas HTTP. |
+| ClickHouse Native | `localhost:19010` | Cliente nativo. |
 
 Credenciales locales:
 
@@ -154,7 +163,7 @@ y escribe archivos en MinIO bajo `s3a://warehouse/polaris`.
 Abre:
 
 ```text
-http://localhost:9001
+http://localhost:19001
 ```
 
 Entra con:
@@ -186,7 +195,7 @@ SHOW DATABASES;
 Prueba el endpoint HTTP:
 
 ```bash
-curl 'http://localhost:8123/?query=SELECT%201'
+curl 'http://localhost:18123/?query=SELECT%201'
 ```
 
 O entra al cliente nativo:
@@ -230,10 +239,10 @@ Para conectar otro proyecto, usa:
 
 | Recurso | Valor desde el host |
 | --- | --- |
-| Spark master | `spark://localhost:7077` |
-| MinIO endpoint | `http://localhost:9003` |
-| Hive Metastore | `thrift://localhost:9083` |
-| Polaris catalog | `http://localhost:8181/api/catalog` |
+| Spark master | `spark://localhost:17077` |
+| MinIO endpoint | `http://localhost:19000` |
+| Hive Metastore | `thrift://localhost:19083` |
+| Polaris catalog | `http://localhost:18181/api/catalog` |
 | Iceberg Hive warehouse | `s3a://warehouse/iceberg` |
 | Iceberg Polaris warehouse | `s3a://warehouse/polaris` |
 
