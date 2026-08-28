@@ -36,7 +36,7 @@ Servicios clave que deben estar arriba:
 | Hive Metastore | `thrift://100.85.61.29:9083` |
 | HiveServer2 | `jdbc:hive2://100.85.61.29:10000` |
 | ClickHouse HTTP | `http://100.85.61.29:8123` |
-| ClickHouse Native | `100.85.61.29:9002` |
+| ClickHouse Native | `100.85.61.29:9010` |
 
 ## 2. Entrar al proyecto cliente
 
@@ -64,7 +64,7 @@ export POLARIS_WAREHOUSE=lakehouse
 export POLARIS_CREDENTIAL=root:s3cr3t
 export CLICKHOUSE_HOST=100.85.61.29
 export CLICKHOUSE_HTTP_PORT=8123
-export CLICKHOUSE_NATIVE_PORT=9002
+export CLICKHOUSE_NATIVE_PORT=9010
 ```
 
 ## 4. Dependencias del proyecto cliente
@@ -213,7 +213,7 @@ curl 'http://100.85.61.29:8123/?query=SELECT%201'
 ```
 
 Si tu proyecto necesita cargar datos en ClickHouse, usa el endpoint HTTP
-`http://100.85.61.29:8123` o el puerto nativo `100.85.61.29:9002`.
+`http://100.85.61.29:8123` o el puerto nativo `100.85.61.29:9010`.
 
 ## 10. Regla importante
 

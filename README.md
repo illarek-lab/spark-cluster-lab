@@ -207,7 +207,7 @@ Servicios disponibles:
 | HiveServer2 | `jdbc:hive2://localhost:10000` | `jdbc:hive2://hiveserver2:10000` | SQL Hive/Beeline. |
 | HiveServer2 UI | <http://localhost:10002> | `http://hiveserver2:10002` | UI web de HiveServer2. |
 | ClickHouse HTTP | <http://localhost:8123> | `http://clickhouse:8123` | API HTTP de ClickHouse. |
-| ClickHouse Native | `localhost:9002` | `clickhouse:9000` | Cliente nativo de ClickHouse. |
+| ClickHouse Native | `localhost:9010` | `clickhouse:9000` | Cliente nativo de ClickHouse. |
 
 Credenciales locales:
 
@@ -520,7 +520,7 @@ rm -rf data/* warehouse/*
 
 Si algún puerto está ocupado, detén el proceso que lo usa o cambia el mapeo de
 puertos en `compose.yaml`. Los puertos publicados por defecto son `7077`,
-`8080`, `8181`, `8182`, `9001`, `9002`, `9003`, `9083`, `10000`, `10002`, `8123`,
+`8080`, `8181`, `8182`, `9001`, `9003`, `9010`, `9083`, `10000`, `10002`, `8123`,
 y `5433`.
 
 Si el worker no aparece en la UI o alguno de los servicios no arranca, revisa

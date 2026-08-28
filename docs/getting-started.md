@@ -46,7 +46,7 @@ docker compose logs --tail=100 spark-master spark-worker minio polaris hive-meta
 | Hive Metastore | `thrift://localhost:9083` | Catalogo Hive/Iceberg clasico. |
 | HiveServer2 | `jdbc:hive2://localhost:10000` | SQL con Beeline/JDBC. |
 | ClickHouse HTTP | <http://localhost:8123> | Consultas HTTP. |
-| ClickHouse Native | `localhost:9002` | Cliente nativo. |
+| ClickHouse Native | `localhost:9010` | Cliente nativo. |
 
 Credenciales locales:
 

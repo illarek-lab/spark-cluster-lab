@@ -186,7 +186,7 @@ services:
     hostname: clickhouse
     ports:
       - "8123:8123"
-      - "9002:9000"
+      - "9010:9000"
     volumes:
       - clickhouse_data:/var/lib/clickhouse
       - clickhouse_logs:/var/log/clickhouse-server
