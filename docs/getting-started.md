@@ -66,8 +66,7 @@ Credenciales locales:
 | MinIO | `admin` | `pass1234` |
 | Polaris root | `admin` | `pass1234` |
 | Hive PostgreSQL | `admin` | `pass1234` |
-| ClickHouse (`admin`) | `admin` | `pass1234` |
-| ClickHouse (`default`) | `default` | sin password |
+| ClickHouse | `admin` | `pass1234` (el usuario `default` queda eliminado) |
 
 ## 4. Entender donde se guardan los datos
 
@@ -216,13 +215,13 @@ SHOW DATABASES;
 Prueba el endpoint HTTP:
 
 ```bash
-curl 'http://localhost:18123/?query=SELECT%201'
+curl -u admin:pass1234 'http://localhost:18123/?query=SELECT%201'
 ```
 
 O entra al cliente nativo:
 
 ```bash
-docker compose exec clickhouse clickhouse-client
+docker compose exec clickhouse clickhouse-client --user admin --password pass1234
 ```
 
 Dentro del cliente:

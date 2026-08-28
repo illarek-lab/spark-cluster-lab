@@ -212,7 +212,7 @@ http://100.85.61.29:18080
 Consulta rapida por HTTP:
 
 ```bash
-curl 'http://100.85.61.29:18123/?query=SELECT%201'
+curl -u admin:pass1234 'http://100.85.61.29:18123/?query=SELECT%201'
 ```
 
 Si tu proyecto necesita cargar datos en ClickHouse, usa el endpoint HTTP

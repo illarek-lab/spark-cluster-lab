@@ -159,9 +159,10 @@ así que si cambias el valor hay que actualizarlos a mano:
   `conf/hive-site.xml`.
 - `spark.sql.catalog.polaris.credential` en `conf/spark-defaults.conf`.
 
-El usuario `default` de ClickHouse se mantiene sin password (comportamiento
-propio de la imagen); `admin`/`pass1234` queda como un usuario
-adicional.
+La imagen de ClickHouse **elimina** el usuario `default` al fijar
+`CLICKHOUSE_USER`/`CLICKHOUSE_PASSWORD` (no lo deja como alternativa sin
+password); `admin`/`pass1234` es el único usuario disponible. Cualquier
+`curl`, `clickhouse-client` o driver debe autenticarse con esa credencial.
 
 ## Spark Standalone y YARN
 
@@ -317,8 +318,7 @@ Credenciales locales — todas iguales a propósito, fijadas en
 | MinIO | `admin` | `pass1234` |
 | Polaris root | `admin` | `pass1234` |
 | Hive PostgreSQL | `admin` | `pass1234` |
-| ClickHouse (`admin`) | `admin` | `pass1234` |
-| ClickHouse (`default`) | `default` | sin password (se mantiene, aparte del usuario `admin`) |
+| ClickHouse | `admin` | `pass1234` (el usuario `default` queda eliminado) |
 
 Comprueba que los servicios estén levantados:
 
@@ -497,13 +497,13 @@ docker compose exec hiveserver2 beeline -u jdbc:hive2://localhost:10000
 Para probar ClickHouse por HTTP:
 
 ```bash
-curl 'http://localhost:8123/?query=SELECT%201'
+curl -u admin:pass1234 'http://localhost:18123/?query=SELECT%201'
 ```
 
 Para entrar al cliente nativo de ClickHouse:
 
 ```bash
-docker compose exec clickhouse clickhouse-client
+docker compose exec clickhouse clickhouse-client --user admin --password pass1234
 ```
 
 ## Usar el clúster desde otros proyectos

@@ -204,8 +204,9 @@ services:
     container_name: clickhouse
     hostname: clickhouse
     environment:
-      # Crea un usuario adicional lab-user/lab-password. El usuario "default"
-      # sigue existiendo sin password (comportamiento propio de la imagen).
+      # La imagen oficial ELIMINA el usuario "default" al fijar estas dos
+      # variables y lo reemplaza por lab-user/lab-password. Cualquier curl,
+      # clickhouse-client o driver debe autenticarse con esa credencial.
       CLICKHOUSE_USER: *lab-user
       CLICKHOUSE_PASSWORD: *lab-password
     ports:
