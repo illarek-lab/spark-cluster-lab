@@ -329,6 +329,22 @@ Parar y eliminar también las imágenes construidas por este Compose:
 docker compose down --rmi local
 ```
 
+Eliminar también imágenes descargadas que ya no use ningún contenedor:
+
+```bash
+docker image prune -a
+```
+
+Si quieres borrar explícitamente la imagen base descargada por este proyecto:
+
+```bash
+docker image rm apache/spark:3.5.6
+```
+
+Si Docker indica que la imagen está en uso, primero detén y elimina los
+contenedores con `docker compose down`, y luego vuelve a ejecutar
+`docker image rm apache/spark:3.5.6`.
+
 Eliminar contenedores detenidos manualmente, si quedaron fuera de Compose:
 
 ```bash
