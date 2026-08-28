@@ -1,4 +1,4 @@
-# Iceberg Lab
+# Spark Cluster Lab
 
 Infraestructura para levantar un clúster pequeño de Apache Spark con Docker
 Compose. Este repositorio solo define el clúster (master + workers); los
@@ -21,13 +21,13 @@ docker compose version
 El proyecto debe estar previamente disponible en el servidor en:
 
 ```text
-/home/jkn/Projects/docker_containers
+/home/jkn/Projects/spark-cluster-lab
 ```
 
 Desde una terminal abierta directamente en ese servidor:
 
 ```bash
-cd /home/jkn/Projects/docker_containers
+cd /home/jkn/Projects/spark-cluster-lab
 docker --version
 docker compose version
 docker compose up --build -d
@@ -117,7 +117,7 @@ docker compose up --build -d
 
 ## Arrancar todo
 
-Desde la raíz del repositorio (`iceberg-lab/`):
+Desde la raíz del repositorio (`spark-cluster-lab/`):
 
 ```bash
 docker compose up --build -d
@@ -149,8 +149,8 @@ En la UI del master debe aparecer un worker conectado.
 
 ## Comandos de Docker y Compose
 
-Ejecuta estos comandos desde el servidor, en `~/iceberg-lab` cuando indiquen
-`docker compose`.
+Ejecuta estos comandos desde el servidor, en `~/spark-cluster-lab` cuando
+indiquen `docker compose`.
 
 ### Docker
 
