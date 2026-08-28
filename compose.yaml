@@ -221,9 +221,6 @@ services:
       - "18080:8080"
 
     volumes:
-      - ./warehouse:/warehouse
-      - ./data:/data
-      - ./jars:/opt/spark/jars-extra
       - ./conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
 
   spark-worker:
@@ -253,8 +250,6 @@ services:
     cpus: *worker-cores
 
     volumes:
-      - ./warehouse:/warehouse
-      - ./data:/data
       - ./conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
 
 volumes:

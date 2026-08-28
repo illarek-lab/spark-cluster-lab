@@ -78,7 +78,7 @@ cluster Spark por cada herramienta.
 | Warehouse Hive | `s3a://warehouse/hive` | Volumen Docker `minio_data`. |
 | Metadatos Hive | PostgreSQL `hive-postgres` | Volumen Docker `hive_postgres_data`. |
 | Datos ClickHouse | `/var/lib/clickhouse` | Volumen Docker `clickhouse_data`. |
-| Datos locales de prueba | `./data` y `./warehouse` | Carpetas del host. |
+| Proyecto cliente | DDL, scripts, notebooks, datos sinteticos y jobs | Carpeta externa al repo de infraestructura. |
 
 MinIO emula S3. Este Compose no levanta HDFS; Spark y Hive usan Hadoop S3A para
 leer y escribir objetos en MinIO.
@@ -230,8 +230,9 @@ Eliminar imagenes locales construidas por el proyecto:
 docker compose down --rmi local
 ```
 
-Las carpetas `data/`, `warehouse/` y `jars/` son carpetas del host. Compose no
-las borra.
+Este repo no guarda carpetas locales de datos, notebooks, JARs de usuario ni
+warehouses. Los datos del lab viven en volumenes Docker y los scripts de trabajo
+deben vivir en el proyecto cliente.
 
 ## 12. Siguiente paso
 

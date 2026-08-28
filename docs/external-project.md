@@ -49,6 +49,9 @@ cd /Users/jkn/Documents/Projects/spark-cluster-lab-test
 Ese proyecto debe contener tus DDL, scripts de datos sinteticos y jobs de
 prueba. No necesita definir otro `docker compose` para Spark.
 
+Los notebooks, DDL, datos sinteticos y JARs propios deben vivir aqui, no en el
+repo `spark-cluster-lab`, porque ese repo solo define infraestructura.
+
 ## 3. Variables recomendadas
 
 Usa estas variables en scripts o `.env` del proyecto cliente:

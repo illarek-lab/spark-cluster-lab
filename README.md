@@ -147,19 +147,17 @@ docker compose up --build -d
   si en el futuro se necesita alguno con secretos.
 - `README.md`: instrucciones de instalación, despliegue y operación.
 
-### Carpetas de datos y ejecución
+### Carpetas de configuración
 
-- `data/`: entrada y salida de datos compartida por el master y todos los
-  workers. En el host se conserva aunque se eliminen los contenedores.
-- `warehouse/`: almacenamiento local compartido por Spark para pruebas con
-  filesystem del host. El warehouse principal de Iceberg usa MinIO en
-  `s3a://warehouse/iceberg`.
-- `jars/`: lugar para JARs adicionales de Spark o Iceberg. Se monta en el
-  master como `/opt/spark/jars-extra`.
 - `conf/`: contiene `spark-defaults.conf`, con el catálogo Iceberg, Hive
   Metastore, Polaris y el endpoint S3A de MinIO.
-- `notebooks/`: reservado para notebooks de exploración y pruebas. Actualmente
-  no contiene notebooks.
+- `docs/`: guías de uso para levantar el lab y conectar proyectos externos.
+- `docker/`: Dockerfiles de las imágenes locales necesarias para Spark y Hive.
+
+Este repositorio no guarda notebooks, datos, JARs de usuario ni warehouses
+locales. Esos artefactos pertenecen a proyectos cliente, por ejemplo
+`/Users/jkn/Documents/Projects/spark-cluster-lab-test`, o al almacenamiento del
+lab en MinIO/volúmenes Docker.
 
 ### Carpeta `docker/`
 
@@ -195,9 +193,6 @@ docker compose up --build -d
 | HiveServer2 | Hive `3.1.0` | Servicio `hiveserver2` | Endpoint SQL Hive/Beeline para pruebas con Hive. |
 | PostgreSQL | `16-alpine` | Servicio `hive-postgres` | Base de datos persistente para metadatos del metastore. |
 | ClickHouse | `24.8.4.13` | Servicio `clickhouse` | Base columnar para analítica y pruebas de integración. |
-| Bind mount `data/` | Carpeta local del host | `/data` en contenedores | Compartir entradas y salidas entre master y workers. |
-| Bind mount `warehouse/` | Carpeta local del host | `/warehouse` en contenedores | Persistir pruebas locales fuera de MinIO. |
-| Bind mount `jars/` | Carpeta local del host | `/opt/spark/jars-extra` en master | Agregar JARs externos al entorno del master. |
 | Volumen `minio_data` | Volumen Docker | `/data` en MinIO | Persistir objetos S3, incluyendo `s3a://warehouse/iceberg`. |
 | Volumen `hive_postgres_data` | Volumen Docker | PostgreSQL | Persistir metadatos de bases, tablas y particiones. |
 | Volumen `clickhouse_data` | Volumen Docker | ClickHouse | Persistir bases y tablas de ClickHouse. |
@@ -262,7 +257,7 @@ Este lab tiene tres capas de almacenamiento:
 | --- | --- | --- | --- |
 | S3 compatible | `s3a://warehouse/iceberg` y `s3a://warehouse/polaris` en MinIO | Tablas Iceberg y datos lakehouse principales. | Volumen Docker `minio_data`. |
 | Metadatos | PostgreSQL de Hive Metastore | Catálogos, tablas, particiones y ubicaciones. | Volumen Docker `hive_postgres_data`. |
-| Filesystem local | `./data` y `./warehouse` | Datos de entrada/salida para pruebas simples. | Carpetas del host. |
+| Proyecto cliente | Fuera de este repo | DDL, scripts, notebooks, datos sinteticos y jobs. | Carpeta del proyecto cliente. |
 
 MinIO emula S3. No hay NameNode/DataNode de Hadoop HDFS en este Compose; Spark y
 Hive acceden al almacenamiento de objetos mediante el conector Hadoop S3A.
@@ -347,9 +342,9 @@ docker compose exec spark-master /opt/spark/bin/spark-submit \
   /ruta/al/job.py
 ```
 
-Si el job está en otro proyecto, monta o copia su ruta dentro del servicio
-antes de ejecutar `spark-submit`; el Compose actual monta `data/`, `warehouse/`
-y `jars/`.
+Si el job está en otro proyecto, ejecútalo desde ese proyecto como cliente del
+cluster remoto, o empaquétalo y envíalo al master con `spark-submit`. Este repo
+no monta carpetas locales de trabajo dentro de Spark.
 
 ## Probar Iceberg sobre MinIO
 
@@ -511,19 +506,11 @@ Si Docker indica que alguna imagen está en uso, primero detén y elimina los
 contenedores con `docker compose down`, y luego vuelve a ejecutar
 `docker image rm`.
 
-Los directorios `data/`, `warehouse/` y `jars/` son bind mounts del host, por
-lo que `docker compose down` no borra su contenido. Los datos de MinIO,
-PostgreSQL y ClickHouse viven en volúmenes Docker. Para eliminar también esos
-volúmenes:
+Los datos de MinIO, PostgreSQL y ClickHouse viven en volúmenes Docker. Para
+eliminar también esos volúmenes:
 
 ```bash
 docker compose down -v
-```
-
-Para eliminar los datos locales del host, hazlo explícitamente y con cuidado:
-
-```bash
-rm -rf data/* warehouse/*
 ```
 
 ## Notas de compatibilidad
@@ -539,9 +526,8 @@ rm -rf data/* warehouse/*
   debe fijar su versión de PySpark a `3.5.x` (por ejemplo,
   `pyspark>=3.5.6,<3.6`) para conectarse a este clúster sin errores de
   serialización.
-- Aunque existen carpetas `jars/` y `notebooks/`, actualmente no hay JAR ni
-  notebook incluido en el repositorio. Los JARs base de Iceberg/S3A se agregan
-  en los Dockerfiles.
+- Los JARs base de Iceberg/S3A se agregan en los Dockerfiles. JARs adicionales,
+  notebooks y datos de prueba deben vivir en proyectos cliente.
 
 ## Solución rápida de problemas
 
