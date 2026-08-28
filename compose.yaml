@@ -36,7 +36,7 @@ services:
     command: server /data --console-address ":9001"
     environment: *minio-env
     ports:
-      - "9000:9000"
+      - "9003:9000"
       - "9001:9001"
     volumes:
       - minio_data:/data
@@ -167,7 +167,7 @@ services:
             "storageConfigInfo": {
               "storageType": "S3",
               "allowedLocations": ["s3://warehouse/polaris"],
-              "endpoint": "http://localhost:9000",
+              "endpoint": "http://localhost:9003",
               "endpointInternal": "http://minio:9000",
               "pathStyleAccess": true,
               "region": "us-east-1"

@@ -231,7 +231,7 @@ Para conectar otro proyecto, usa:
 | Recurso | Valor desde el host |
 | --- | --- |
 | Spark master | `spark://localhost:7077` |
-| MinIO endpoint | `http://localhost:9000` |
+| MinIO endpoint | `http://localhost:9003` |
 | Hive Metastore | `thrift://localhost:9083` |
 | Polaris catalog | `http://localhost:8181/api/catalog` |
 | Iceberg Hive warehouse | `s3a://warehouse/iceberg` |

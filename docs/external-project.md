@@ -30,7 +30,7 @@ Servicios clave que deben estar arriba:
 | --- | --- |
 | Spark Master | `spark://100.85.61.29:7077` |
 | Spark Master UI | `http://100.85.61.29:8080` |
-| MinIO S3 API | `http://100.85.61.29:9000` |
+| MinIO S3 API | `http://100.85.61.29:9003` |
 | MinIO Console | `http://100.85.61.29:9001` |
 | Polaris REST Catalog | `http://100.85.61.29:8181/api/catalog` |
 | Hive Metastore | `thrift://100.85.61.29:9083` |
@@ -55,7 +55,7 @@ Usa estas variables en scripts o `.env` del proyecto cliente:
 
 ```bash
 export SPARK_MASTER_URL=spark://100.85.61.29:7077
-export MINIO_ENDPOINT=http://100.85.61.29:9000
+export MINIO_ENDPOINT=http://100.85.61.29:9003
 export MINIO_ACCESS_KEY=minioadmin
 export MINIO_SECRET_KEY=minioadmin
 export HIVE_METASTORE_URI=thrift://100.85.61.29:9083
@@ -105,7 +105,7 @@ spark = (
     .config("spark.sql.catalog.polaris.warehouse", "lakehouse")
     .config("spark.sql.catalog.polaris.credential", "root:s3cr3t")
     .config("spark.sql.catalog.polaris.scope", "PRINCIPAL_ROLE:ALL")
-    .config("spark.hadoop.fs.s3a.endpoint", "http://100.85.61.29:9000")
+    .config("spark.hadoop.fs.s3a.endpoint", "http://100.85.61.29:9003")
     .config("spark.hadoop.fs.s3a.access.key", "minioadmin")
     .config("spark.hadoop.fs.s3a.secret.key", "minioadmin")
     .config("spark.hadoop.fs.s3a.path.style.access", "true")

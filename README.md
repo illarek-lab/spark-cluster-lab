@@ -198,7 +198,7 @@ Servicios disponibles:
 | --- | --- | --- | --- |
 | Spark Master UI | <http://localhost:8080> | `http://spark-master:8080` | Ver workers y aplicaciones. |
 | Spark Master | `spark://localhost:7077` | `spark://spark-master:7077` | Enviar jobs Spark. |
-| MinIO S3 API | `http://localhost:9000` | `http://minio:9000` | Almacenamiento S3 compatible. |
+| MinIO S3 API | `http://localhost:9003` | `http://minio:9000` | Almacenamiento S3 compatible. |
 | MinIO Console | <http://localhost:9001> | `http://minio:9001` | UI web de buckets y objetos. |
 | Polaris REST Catalog | `http://localhost:8181/api/catalog` | `http://polaris:8181/api/catalog` | Catálogo Iceberg vía REST. |
 | Polaris Management | `http://localhost:8181/api/management/v1` | `http://polaris:8181/api/management/v1` | Administración de catálogos y principals. |
@@ -435,11 +435,11 @@ spark = (
 ```
 
 Este clúster expone MinIO como almacenamiento remoto S3 compatible. Para
-proyectos externos, usa `http://<host>:9000` como endpoint S3, bucket
+proyectos externos, usa `http://<host>:9003` como endpoint S3, bucket
 `warehouse`, access key `minioadmin` y secret key `minioadmin`. Si el proyecto
 corre fuera de la red de Compose, usa `spark://<host>:7077`,
 `thrift://<host>:9083` y `s3a://warehouse/iceberg` con endpoint
-`http://<host>:9000`.
+`http://<host>:9003`.
 
 ## Parar y limpiar
 
@@ -520,8 +520,8 @@ rm -rf data/* warehouse/*
 
 Si algún puerto está ocupado, detén el proceso que lo usa o cambia el mapeo de
 puertos en `compose.yaml`. Los puertos publicados por defecto son `7077`,
-`8080`, `8181`, `8182`, `9000`, `9001`, `9083`, `10000`, `10002`, `8123`,
-`9002` y `5433`.
+`8080`, `8181`, `8182`, `9001`, `9002`, `9003`, `9083`, `10000`, `10002`, `8123`,
+y `5433`.
 
 Si el worker no aparece en la UI o alguno de los servicios no arranca, revisa
 los logs:
