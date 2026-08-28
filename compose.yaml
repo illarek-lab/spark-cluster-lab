@@ -24,7 +24,7 @@ x-cluster-config:
 # actualízalos ahí también a mano.
 x-lab-credentials:
   lab-user: &lab-user admin
-  lab-password: &lab-password pass
+  lab-password: &lab-password pass1234
 
 x-minio-env: &minio-env
   MINIO_ROOT_USER: *lab-user
@@ -42,7 +42,7 @@ x-polaris-env: &polaris-env
   AWS_ACCESS_KEY_ID: *lab-user
   AWS_SECRET_ACCESS_KEY: *lab-password
   # Debe coincidir manualmente con lab-user/lab-password: "REALM,client_id,client_secret".
-  POLARIS_BOOTSTRAP_CREDENTIALS: POLARIS,admin,password
+  POLARIS_BOOTSTRAP_CREDENTIALS: POLARIS,admin,pass1234
   polaris.realm-context.realms: POLARIS
   quarkus.otel.sdk.disabled: "true"
 
