@@ -1,18 +1,19 @@
 # Spark Cluster Lab
 
-Infraestructura para levantar un clúster pequeño de Apache Spark con Docker
-Compose. Este repositorio solo define el clúster (master + workers); los
-proyectos que lo usan como cliente viven fuera de aquí.
+Infraestructura para levantar un laboratorio lakehouse con Docker Compose:
+Apache Spark en modo Standalone, Apache Iceberg, Apache Polaris, Hive
+Metastore, HiveServer2, MinIO como almacenamiento S3 compatible y ClickHouse
+para analítica columnar. Los proyectos que usan este stack como cliente pueden
+vivir fuera de aquí.
 
 ## Requisitos
 
 - macOS, Linux o Windows con Docker Desktop instalado y en ejecución.
 - Docker Compose v2 (`docker compose version`).
 
-Comprueba Docker antes de empezar:
+Comprueba Docker Compose antes de empezar:
 
 ```bash
-docker --version
 docker compose version
 ```
 
@@ -28,7 +29,6 @@ Desde una terminal abierta directamente en ese servidor:
 
 ```bash
 cd /home/jkn/Projects/spark-cluster-lab
-docker --version
 docker compose version
 docker compose up --build -d
 docker compose ps
@@ -38,6 +38,9 @@ La interfaz web estará disponible en `http://100.85.61.29:8080` si el puerto
 está permitido por el firewall y la red del servidor. El endpoint Spark será
 `spark://100.85.61.29:7077` para clientes externos. Desde los propios
 contenedores se usa `spark://spark-master:7077`.
+
+También quedan disponibles MinIO, Polaris, Hive y ClickHouse en los puertos
+indicados en [Servicios disponibles](#servicios-disponibles).
 
 ## Configuración del clúster
 
@@ -106,22 +109,23 @@ docker compose up --build -d
 
 - `data/`: entrada y salida de datos compartida por el master y todos los
   workers. En el host se conserva aunque se eliminen los contenedores.
-- `warehouse/`: ubicación del almacén de tablas, por ejemplo tablas Iceberg.
-  También se monta en todos los nodos para que compartan el mismo contenido.
+- `warehouse/`: almacenamiento local compartido por Spark para pruebas con
+  filesystem del host. El warehouse principal de Iceberg usa MinIO en
+  `s3a://warehouse/iceberg`.
 - `jars/`: lugar para JARs adicionales de Spark o Iceberg. Se monta en el
   master como `/opt/spark/jars-extra`.
-- `conf/`: reservado para archivos de configuración de Spark, catálogos y
-  otras configuraciones del laboratorio. Actualmente no contiene archivos.
+- `conf/`: contiene `spark-defaults.conf`, con el catálogo Iceberg, Hive
+  Metastore, Polaris y el endpoint S3A de MinIO.
 - `notebooks/`: reservado para notebooks de exploración y pruebas. Actualmente
   no contiene notebooks.
 
 ### Carpeta `docker/`
 
 - `docker/spark/Dockerfile`: construye la imagen usada por el master y los
-  workers. Parte de `apache/spark:3.5.6`.
-- `docker/minio/`: reservada para una futura definición de MinIO (almacenamiento
-  compatible con S3). Actualmente está vacía y no hay ningún servicio `minio`
-  en `compose.yaml`.
+  workers. Parte de `apache/spark:3.5.6` y agrega JARs de Iceberg y S3A.
+- `docker/hive/Dockerfile`: construye la imagen usada por Hive Metastore y
+  HiveServer2. Parte de `apache/hive:4.0.1` y agrega el driver PostgreSQL y
+  JARs S3A.
 
 ## Herramientas y componentes incluidos
 
@@ -130,6 +134,11 @@ docker compose up --build -d
 | Docker | Instalado en el host | Host | Ejecutar contenedores, listar imágenes, ver logs y limpiar recursos. |
 | Docker Compose v2 | Instalado en el host | Host | Construir y operar el clúster definido en `compose.yaml`. |
 | Apache Spark | `3.5.6` | Imagen `apache/spark:3.5.6` | Motor distribuido del clúster. |
+| Apache Iceberg | `1.10.1` | JAR `iceberg-spark-runtime-3.5_2.12` | Formato de tablas lakehouse usado desde Spark. |
+| Iceberg AWS bundle | `1.10.1` | JAR `iceberg-aws-bundle` | Integración Iceberg con almacenamiento S3 compatible. |
+| Hadoop S3A | `hadoop-aws:3.3.4` | JAR en Spark y Hive | Permite leer/escribir rutas `s3a://...` hacia MinIO. |
+| Apache Polaris | `latest` | Servicio `polaris` | Catálogo REST moderno para tablas Iceberg. |
+| Polaris setup | `alpine/curl:8.21.0` | Servicio `polaris-setup` | Crea el catálogo `lakehouse` apuntando a MinIO. |
 | Spark Master | `org.apache.spark.deploy.master.Master` | Servicio `spark-master` | Coordina workers y recibe aplicaciones Spark. |
 | Spark Worker | `org.apache.spark.deploy.worker.Worker` | Servicio `spark-worker` | Ejecuta tareas Spark con los recursos definidos en `x-cluster-config`. |
 | Spark Master UI | Puerto `8080` | `spark-master` | Ver estado del clúster, workers conectados y aplicaciones. |
@@ -138,9 +147,18 @@ docker compose up --build -d
 | `spark-class` | Incluido con Spark | `/opt/spark/bin/spark-class` | Arrancar los procesos internos de master y worker. |
 | `pyspark` | Línea compatible `3.5.x` | Cliente externo o imagen Spark | Conectar proyectos Python al clúster. |
 | Java runtime | Incluido por la imagen base de Spark | Imagen `apache/spark:3.5.6` | Requisito de ejecución de Spark. |
+| MinIO | `RELEASE.2025-04-22T22-12-26Z` | Servicio `minio` | Emula S3 local para guardar datos del lakehouse. |
+| MinIO Client | `RELEASE.2025-04-16T18-13-26Z` | Servicio `minio-init` | Crea automáticamente el bucket `warehouse`. |
+| Hive Metastore | `apache/hive:4.0.1` | Servicio `hive-metastore` | Catálogo central para tablas Iceberg/Hive vía Thrift. |
+| HiveServer2 | `apache/hive:4.0.1` | Servicio `hiveserver2` | Endpoint SQL Hive/Beeline para pruebas con Hive. |
+| PostgreSQL | `16-alpine` | Servicio `hive-postgres` | Base de datos persistente para metadatos del metastore. |
+| ClickHouse | `26.3-lts` | Servicio `clickhouse` | Base columnar para analítica y pruebas de integración. |
 | Bind mount `data/` | Carpeta local del host | `/data` en contenedores | Compartir entradas y salidas entre master y workers. |
-| Bind mount `warehouse/` | Carpeta local del host | `/warehouse` en contenedores | Persistir tablas o datos administrados por jobs. |
+| Bind mount `warehouse/` | Carpeta local del host | `/warehouse` en contenedores | Persistir pruebas locales fuera de MinIO. |
 | Bind mount `jars/` | Carpeta local del host | `/opt/spark/jars-extra` en master | Agregar JARs externos al entorno del master. |
+| Volumen `minio_data` | Volumen Docker | `/data` en MinIO | Persistir objetos S3, incluyendo `s3a://warehouse/iceberg`. |
+| Volumen `hive_postgres_data` | Volumen Docker | PostgreSQL | Persistir metadatos de bases, tablas y particiones. |
+| Volumen `clickhouse_data` | Volumen Docker | ClickHouse | Persistir bases y tablas de ClickHouse. |
 
 ## Arrancar todo
 
@@ -152,8 +170,8 @@ docker compose up --build -d
 
 El número de workers y sus límites de RAM/CPU salen de `x-cluster-config` en
 `compose.yaml` (ver [Configuración del clúster](#configuración-del-clúster)).
-La primera ejecución construye la imagen de Spark. Para ver el arranque en
-primer plano:
+La primera ejecución construye las imágenes locales de Spark y Hive. Para ver
+el arranque en primer plano:
 
 ```bash
 docker compose up --build
@@ -161,61 +179,76 @@ docker compose up --build
 
 Servicios disponibles:
 
-- Spark Master UI: <http://localhost:8080>
-- Spark Master: `spark://localhost:7077` desde el host, o
-  `spark://spark-master:7077` desde otro contenedor de Compose.
+| Servicio | URL o endpoint desde el host | Endpoint interno Compose | Uso |
+| --- | --- | --- | --- |
+| Spark Master UI | <http://localhost:8080> | `http://spark-master:8080` | Ver workers y aplicaciones. |
+| Spark Master | `spark://localhost:7077` | `spark://spark-master:7077` | Enviar jobs Spark. |
+| MinIO S3 API | `http://localhost:9000` | `http://minio:9000` | Almacenamiento S3 compatible. |
+| MinIO Console | <http://localhost:9001> | `http://minio:9001` | UI web de buckets y objetos. |
+| Polaris REST Catalog | `http://localhost:8181/api/catalog` | `http://polaris:8181/api/catalog` | Catálogo Iceberg vía REST. |
+| Polaris Management | `http://localhost:8181/api/management/v1` | `http://polaris:8181/api/management/v1` | Administración de catálogos y principals. |
+| Polaris Health/Metrics | <http://localhost:8182/q/health> | `http://polaris:8182` | Healthcheck y métricas internas. |
+| Hive Metastore | `thrift://localhost:9083` | `thrift://hive-metastore:9083` | Catálogo de tablas. |
+| HiveServer2 | `jdbc:hive2://localhost:10000` | `jdbc:hive2://hiveserver2:10000` | SQL Hive/Beeline. |
+| HiveServer2 UI | <http://localhost:10002> | `http://hiveserver2:10002` | UI web de HiveServer2. |
+| ClickHouse HTTP | <http://localhost:8123> | `http://clickhouse:8123` | API HTTP de ClickHouse. |
+| ClickHouse Native | `localhost:9002` | `clickhouse:9000` | Cliente nativo de ClickHouse. |
 
-Comprueba que ambos servicios están levantados:
+Credenciales locales:
+
+| Servicio | Usuario | Password |
+| --- | --- | --- |
+| MinIO | `minioadmin` | `minioadmin` |
+| Polaris root | `root` | `s3cr3t` |
+| Hive PostgreSQL | `hive` | `hive` |
+| ClickHouse | `default` | sin password |
+
+Comprueba que los servicios estén levantados:
 
 ```bash
 docker compose ps
-docker compose logs --tail=100 spark-master spark-worker
+docker compose logs --tail=100 spark-master spark-worker polaris hive-metastore minio clickhouse
 ```
 
 En la UI del master debe aparecer un worker conectado.
 
-## Comandos de Docker y Compose
+## Almacenamiento lakehouse
 
-Ejecuta estos comandos desde el servidor, en `~/spark-cluster-lab` cuando
-indiquen `docker compose`.
+Este lab tiene tres capas de almacenamiento:
 
-### Docker
+| Capa | Ruta o volumen | Qué guarda | Persistencia |
+| --- | --- | --- | --- |
+| S3 compatible | `s3a://warehouse/iceberg` y `s3a://warehouse/polaris` en MinIO | Tablas Iceberg y datos lakehouse principales. | Volumen Docker `minio_data`. |
+| Metadatos | PostgreSQL de Hive Metastore | Catálogos, tablas, particiones y ubicaciones. | Volumen Docker `hive_postgres_data`. |
+| Filesystem local | `./data` y `./warehouse` | Datos de entrada/salida para pruebas simples. | Carpetas del host. |
 
-```bash
-# Información del motor y versión instalada
-docker version
-docker info
+MinIO emula S3. No hay NameNode/DataNode de Hadoop HDFS en este Compose; Spark y
+Hive acceden al almacenamiento de objetos mediante el conector Hadoop S3A.
 
-# Imágenes locales
-docker image ls
-docker image prune
+El bucket `warehouse` se crea automáticamente con el servicio `minio-init`.
+Dentro de ese bucket:
 
-# Contenedores en ejecución o detenidos
-docker ps
-docker ps -a
+- `s3a://warehouse/iceberg` es el warehouse del catálogo `iceberg`, respaldado
+  por Hive Metastore.
+- `s3a://warehouse/polaris` es el warehouse del catálogo `polaris`, respaldado
+  por Apache Polaris REST Catalog.
+- `s3a://warehouse/hive` queda reservado como warehouse Hive.
 
-# Logs y procesos de un contenedor
-docker logs -f spark-master
-docker logs --tail=100 spark-worker
-docker inspect spark-master
-docker top spark-master
+La configuración de Spark está en `conf/spark-defaults.conf`:
 
-# Ejecutar una shell dentro del contenedor
-docker exec -it spark-master bash
-
-# Recursos consumidos
-docker stats
-
-# Redes y volúmenes
-docker network ls
-docker volume ls
-
-# Eliminar un contenedor detenido o una imagen
-docker rm NOMBRE_O_ID
-docker rmi IMAGEN_O_ID
+```properties
+spark.sql.catalog.iceberg.type hive
+spark.sql.catalog.iceberg.uri thrift://hive-metastore:9083
+spark.sql.catalog.iceberg.warehouse s3a://warehouse/iceberg
+spark.sql.catalog.polaris.catalog-impl org.apache.iceberg.rest.RESTCatalog
+spark.sql.catalog.polaris.uri http://polaris:8181/api/catalog
+spark.sql.catalog.polaris.warehouse lakehouse
+spark.hadoop.fs.s3a.endpoint http://minio:9000
 ```
 
-### Docker Compose
+## Comandos de Docker Compose
+
+Ejecuta estos comandos desde el servidor, en `~/spark-cluster-lab`.
 
 ```bash
 # Validar y mostrar la configuración final
@@ -249,6 +282,15 @@ docker compose down
 
 # Detener y eliminar también las imágenes locales del proyecto
 docker compose down --rmi local
+
+# Detener y eliminar contenedores, red y volúmenes del proyecto
+docker compose down -v
+
+# Ver imágenes usadas por los servicios del Compose
+docker compose images
+
+# Ver procesos dentro de los servicios
+docker compose top
 ```
 
 ## Ejecutar un job Spark
@@ -267,11 +309,91 @@ Si el job está en otro proyecto, monta o copia su ruta dentro del servicio
 antes de ejecutar `spark-submit`; el Compose actual monta `data/`, `warehouse/`
 y `jars/`.
 
+## Probar Iceberg sobre MinIO
+
+Abre una sesión SQL de Spark dentro del master:
+
+```bash
+docker compose exec spark-master /opt/spark/bin/spark-sql \
+  --master spark://spark-master:7077
+```
+
+Crea una tabla Iceberg usando Hive Metastore como catálogo:
+
+```sql
+CREATE DATABASE IF NOT EXISTS iceberg.lab;
+
+CREATE TABLE IF NOT EXISTS iceberg.lab.events (
+  id BIGINT,
+  event_name STRING,
+  created_at TIMESTAMP
+) USING iceberg;
+
+INSERT INTO iceberg.lab.events VALUES
+  (1, 'started', current_timestamp()),
+  (2, 'finished', current_timestamp());
+
+SELECT * FROM iceberg.lab.events;
+```
+
+Prueba también Polaris como catálogo REST de Iceberg:
+
+```sql
+CREATE NAMESPACE IF NOT EXISTS polaris.lab;
+
+CREATE TABLE IF NOT EXISTS polaris.lab.events (
+  id BIGINT,
+  event_name STRING,
+  created_at TIMESTAMP
+) USING iceberg;
+
+INSERT INTO polaris.lab.events VALUES
+  (1, 'created-with-polaris', current_timestamp());
+
+SELECT * FROM polaris.lab.events;
+```
+
+Los archivos de esas tablas quedan en MinIO bajo el bucket `warehouse`, en los
+prefijos `iceberg/` y `polaris/`. Puedes verlos en
+<http://localhost:9001> con usuario y password `minioadmin`.
+
+## Usar Hive y ClickHouse
+
+Hive Metastore queda disponible para Spark/Iceberg en:
+
+```text
+thrift://hive-metastore:9083
+```
+
+Polaris queda disponible como catálogo REST de Iceberg en:
+
+```text
+http://polaris:8181/api/catalog
+```
+
+Para abrir Beeline contra HiveServer2:
+
+```bash
+docker compose exec hiveserver2 beeline -u jdbc:hive2://localhost:10000
+```
+
+Para probar ClickHouse por HTTP:
+
+```bash
+curl 'http://localhost:8123/?query=SELECT%201'
+```
+
+Para entrar al cliente nativo de ClickHouse:
+
+```bash
+docker compose exec clickhouse clickhouse-client
+```
+
 ## Usar el clúster desde otros proyectos
 
-Este repositorio solo levanta el clúster (master + workers); no está pensado
-para contener la lógica de negocio. Cualquier proyecto, en otra carpeta o
-máquina, se conecta como cliente Spark sin pertenecer a este Compose.
+Este repositorio levanta la infraestructura compartida del lab; no está
+pensado para contener la lógica de negocio. Cualquier proyecto, en otra carpeta
+o máquina, se conecta como cliente Spark sin pertenecer a este Compose.
 
 Requisitos para que un proyecto externo se conecte:
 
@@ -297,13 +419,12 @@ spark = (
 )
 ```
 
-Este clúster no expone un servicio de almacenamiento remoto: `data/` y
-`warehouse/` son bind mounts del host donde corre Docker, visibles como
-`/data` y `/warehouse` dentro de los contenedores. Un proyecto que corre en
-otra máquina no ve esas rutas directamente; para compartir datos entre
-máquinas hace falta un almacenamiento accesible por red (por ejemplo, el
-`docker/minio/` reservado, aún sin implementar) en vez de depender del
-filesystem del host.
+Este clúster expone MinIO como almacenamiento remoto S3 compatible. Para
+proyectos externos, usa `http://<host>:9000` como endpoint S3, bucket
+`warehouse`, access key `minioadmin` y secret key `minioadmin`. Si el proyecto
+corre fuera de la red de Compose, usa `spark://<host>:7077`,
+`thrift://<host>:9083` y `s3a://warehouse/iceberg` con endpoint
+`http://<host>:9000`.
 
 ## Parar y limpiar
 
@@ -313,9 +434,8 @@ Parar los contenedores manteniendo los datos locales:
 docker compose down
 ```
 
-Ese comando elimina los contenedores de `spark-master`, las réplicas de
-`spark-worker` y la red creada por Compose. Es el comando recomendado cuando ya
-no necesitas tener el clúster levantado.
+Ese comando elimina los contenedores del stack y la red creada por Compose. Es
+el comando recomendado cuando ya no necesitas tener el lab levantado.
 
 Si quieres asegurarte de borrar contenedores huérfanos de ejecuciones previas:
 
@@ -329,38 +449,36 @@ Parar y eliminar también las imágenes construidas por este Compose:
 docker compose down --rmi local
 ```
 
-Eliminar también imágenes descargadas que ya no use ningún contenedor:
-
-```bash
-docker image prune -a
-```
-
-Si quieres borrar explícitamente la imagen base descargada por este proyecto:
+Compose elimina bien los contenedores, la red, los volúmenes y las imágenes
+construidas por el proyecto. Las imágenes base descargadas desde registros
+pueden estar compartidas con otros proyectos; si quieres borrarlas, primero
+revisa `docker compose images` y luego elimina explícitamente las que ya no
+uses:
 
 ```bash
 docker image rm apache/spark:3.5.6
+docker image rm apache/hive:4.0.1
+docker image rm apache/polaris:latest
+docker image rm postgres:16-alpine
+docker image rm minio/minio:RELEASE.2025-04-22T22-12-26Z
+docker image rm minio/mc:RELEASE.2025-04-16T18-13-26Z
+docker image rm clickhouse/clickhouse-server:26.3-lts
 ```
 
-Si Docker indica que la imagen está en uso, primero detén y elimina los
+Si Docker indica que alguna imagen está en uso, primero detén y elimina los
 contenedores con `docker compose down`, y luego vuelve a ejecutar
-`docker image rm apache/spark:3.5.6`.
-
-Eliminar contenedores detenidos manualmente, si quedaron fuera de Compose:
-
-```bash
-docker ps -a
-docker rm NOMBRE_O_ID
-```
-
-Limpiar recursos Docker no usados por ningún proyecto:
-
-```bash
-docker system prune
-```
+`docker image rm`.
 
 Los directorios `data/`, `warehouse/` y `jars/` son bind mounts del host, por
-lo que `docker compose down` no borra su contenido. Para eliminar los datos,
-hazlo explícitamente y con cuidado:
+lo que `docker compose down` no borra su contenido. Los datos de MinIO,
+PostgreSQL y ClickHouse viven en volúmenes Docker. Para eliminar también esos
+volúmenes:
+
+```bash
+docker compose down -v
+```
+
+Para eliminar los datos locales del host, hazlo explícitamente y con cuidado:
 
 ```bash
 rm -rf data/* warehouse/*
@@ -369,23 +487,32 @@ rm -rf data/* warehouse/*
 ## Notas de compatibilidad
 
 - El contenedor usa Apache Spark 3.5.6.
+- Iceberg se instala en Spark con `iceberg-spark-runtime-3.5_2.12:1.10.1` y
+  `iceberg-aws-bundle:1.10.1`.
+- Polaris se levanta como catálogo REST local para desarrollo. El catálogo
+  `lakehouse` se crea automáticamente con `polaris-setup` y apunta a MinIO.
+- MinIO emula S3; este Compose no levanta HDFS.
 - El protocolo Standalone de Spark (`spark://host:puerto`) exige que cliente y
   clúster compartan versión mayor.menor de Spark. Cualquier proyecto cliente
   debe fijar su versión de PySpark a `3.5.x` (por ejemplo,
   `pyspark>=3.5.6,<3.6`) para conectarse a este clúster sin errores de
   serialización.
-- Aunque existen carpetas `conf/`, `jars/` y `notebooks/`, actualmente no hay
-  una configuración adicional, JAR ni notebook incluido en el repositorio.
+- Aunque existen carpetas `jars/` y `notebooks/`, actualmente no hay JAR ni
+  notebook incluido en el repositorio. Los JARs base de Iceberg/S3A se agregan
+  en los Dockerfiles.
 
 ## Solución rápida de problemas
 
-Si los puertos `7077` o `8080` están ocupados, detén el proceso que los usa o
-cambia el mapeo de puertos en `compose.yaml` (por ejemplo, `18080:8080`).
+Si algún puerto está ocupado, detén el proceso que lo usa o cambia el mapeo de
+puertos en `compose.yaml`. Los puertos publicados por defecto son `7077`,
+`8080`, `8181`, `8182`, `9000`, `9001`, `9083`, `10000`, `10002`, `8123`,
+`9002` y `5433`.
 
-Si el worker no aparece en la UI, revisa los logs:
+Si el worker no aparece en la UI o alguno de los servicios no arranca, revisa
+los logs:
 
 ```bash
-docker compose logs spark-master spark-worker
+docker compose logs spark-master spark-worker hive-metastore hiveserver2 minio clickhouse
 ```
 
 Para reconstruir la imagen sin caché:
