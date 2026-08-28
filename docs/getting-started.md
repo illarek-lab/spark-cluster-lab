@@ -63,10 +63,11 @@ Credenciales locales:
 
 | Servicio | Usuario | Password |
 | --- | --- | --- |
-| MinIO | `minioadmin` | `minioadmin` |
-| Polaris root | `root` | `s3cr3t` |
-| Hive PostgreSQL | `hive` | `hive` |
-| ClickHouse | `default` | sin password |
+| MinIO | `admin` | `password` |
+| Polaris root | `admin` | `password` |
+| Hive PostgreSQL | `admin` | `password` |
+| ClickHouse (`admin`) | `admin` | `password` |
+| ClickHouse (`default`) | `default` | sin password |
 
 ## 4. Entender donde se guardan los datos
 
@@ -189,8 +190,8 @@ http://localhost:19001
 Entra con:
 
 ```text
-usuario: minioadmin
-password: minioadmin
+usuario: admin
+password: password
 ```
 
 Busca el bucket `warehouse`. Deberias ver prefijos como `iceberg/`, `polaris/`

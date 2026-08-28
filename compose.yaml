@@ -15,22 +15,34 @@ x-cluster-config:
   # deben coincidir manualmente con worker-memory/worker-cores.
   spark-master-default: &spark-master-default "yarn"
 
+# Credencial única para todas las herramientas del lab (MinIO, Polaris, Hive
+# Postgres, ClickHouse). Es la misma en todos lados a propósito, para no tener
+# que recordar una distinta por servicio en un entorno de laboratorio.
+# POLARIS_BOOTSTRAP_CREDENTIALS (abajo), conf/hive-site.xml y
+# conf/spark-defaults.conf NO pueden referenciar estos anchors porque son
+# strings compuestos o archivos fuera de este YAML: si cambias este valor,
+# actualízalos ahí también a mano.
+x-lab-credentials:
+  lab-user: &lab-user admin
+  lab-password: &lab-password password
+
 x-minio-env: &minio-env
-  MINIO_ROOT_USER: minioadmin
-  MINIO_ROOT_PASSWORD: minioadmin
+  MINIO_ROOT_USER: *lab-user
+  MINIO_ROOT_PASSWORD: *lab-password
 
 x-hive-env: &hive-env
   DEFAULT_FS: s3a://warehouse
   HIVE_WAREHOUSE_PATH: s3a://warehouse/hive
-  AWS_ACCESS_KEY_ID: minioadmin
-  AWS_SECRET_ACCESS_KEY: minioadmin
+  AWS_ACCESS_KEY_ID: *lab-user
+  AWS_SECRET_ACCESS_KEY: *lab-password
   S3_ENDPOINT_URL: http://minio:9000
 
 x-polaris-env: &polaris-env
   AWS_REGION: us-east-1
-  AWS_ACCESS_KEY_ID: minioadmin
-  AWS_SECRET_ACCESS_KEY: minioadmin
-  POLARIS_BOOTSTRAP_CREDENTIALS: POLARIS,root,s3cr3t
+  AWS_ACCESS_KEY_ID: *lab-user
+  AWS_SECRET_ACCESS_KEY: *lab-password
+  # Debe coincidir manualmente con lab-user/lab-password: "REALM,client_id,client_secret".
+  POLARIS_BOOTSTRAP_CREDENTIALS: POLARIS,admin,password
   polaris.realm-context.realms: POLARIS
   quarkus.otel.sdk.disabled: "true"
 
@@ -71,8 +83,8 @@ services:
     hostname: hive-postgres
     environment:
       POSTGRES_DB: metastore_db
-      POSTGRES_USER: hive
-      POSTGRES_PASSWORD: hive
+      POSTGRES_USER: *lab-user
+      POSTGRES_PASSWORD: *lab-password
     ports:
       - "15433:5432"
     volumes:
@@ -149,8 +161,8 @@ services:
       polaris:
         condition: service_healthy
     environment:
-      CLIENT_ID: root
-      CLIENT_SECRET: s3cr3t
+      CLIENT_ID: *lab-user
+      CLIENT_SECRET: *lab-password
       CATALOG_NAME: lakehouse
       REALM: POLARIS
     entrypoint: /bin/sh
@@ -191,6 +203,11 @@ services:
     image: clickhouse/clickhouse-server:24.8.4.13
     container_name: clickhouse
     hostname: clickhouse
+    environment:
+      # Crea un usuario adicional lab-user/lab-password. El usuario "default"
+      # sigue existiendo sin password (comportamiento propio de la imagen).
+      CLICKHOUSE_USER: *lab-user
+      CLICKHOUSE_PASSWORD: *lab-password
     ports:
       - "18123:8123"
       - "19010:9000"

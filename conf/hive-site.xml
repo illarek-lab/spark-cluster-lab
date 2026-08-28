@@ -10,12 +10,14 @@
     <value>org.postgresql.Driver</value>
   </property>
   <property>
+    <!-- Debe coincidir con lab-user en compose.yaml (x-lab-credentials). -->
     <name>javax.jdo.option.ConnectionUserName</name>
-    <value>hive</value>
+    <value>admin</value>
   </property>
   <property>
+    <!-- Debe coincidir con lab-password en compose.yaml (x-lab-credentials). -->
     <name>javax.jdo.option.ConnectionPassword</name>
-    <value>hive</value>
+    <value>password</value>
   </property>
   <property>
     <name>datanucleus.autoCreateSchema</name>

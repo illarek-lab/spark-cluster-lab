@@ -136,6 +136,33 @@ docker compose down
 docker compose up --build -d
 ```
 
+### Credenciales del lab
+
+`compose.yaml` define `x-lab-credentials` con un único usuario/password
+(`admin`/`password`) reutilizado en MinIO, Polaris, Hive PostgreSQL y
+ClickHouse, para no tener que recordar una credencial distinta por servicio:
+
+```yaml
+x-lab-credentials:
+  lab-user: &lab-user admin
+  lab-password: &lab-password password
+```
+
+Ese anchor se referencia (`*lab-user`/`*lab-password`) en los servicios
+`minio`, `hive-postgres`, `polaris-setup` y `clickhouse`. Tres lugares no
+pueden referenciarlo porque son strings compuestos o archivos fuera del YAML,
+así que si cambias el valor hay que actualizarlos a mano:
+
+- `POLARIS_BOOTSTRAP_CREDENTIALS` en `x-polaris-env` (formato
+  `REALM,client_id,client_secret`).
+- `javax.jdo.option.ConnectionUserName`/`ConnectionPassword` en
+  `conf/hive-site.xml`.
+- `spark.sql.catalog.polaris.credential` en `conf/spark-defaults.conf`.
+
+El usuario `default` de ClickHouse se mantiene sin password (comportamiento
+propio de la imagen); `admin`/`password` queda como un usuario
+adicional.
+
 ## Spark Standalone y YARN
 
 El clúster levanta dos cluster managers a la vez, para poder comparar o
@@ -281,14 +308,17 @@ Servicios disponibles:
 | ClickHouse HTTP | <http://localhost:18123> | `http://clickhouse:8123` | API HTTP de ClickHouse. |
 | ClickHouse Native | `localhost:19010` | `clickhouse:9000` | Cliente nativo de ClickHouse. |
 
-Credenciales locales:
+Credenciales locales — todas iguales a propósito, fijadas en
+`x-lab-credentials` dentro de `compose.yaml` (ver
+[Configuración del clúster](#configuración-del-clúster)):
 
 | Servicio | Usuario | Password |
 | --- | --- | --- |
-| MinIO | `minioadmin` | `minioadmin` |
-| Polaris root | `root` | `s3cr3t` |
-| Hive PostgreSQL | `hive` | `hive` |
-| ClickHouse | `default` | sin password |
+| MinIO | `admin` | `password` |
+| Polaris root | `admin` | `password` |
+| Hive PostgreSQL | `admin` | `password` |
+| ClickHouse (`admin`) | `admin` | `password` |
+| ClickHouse (`default`) | `default` | sin password (se mantiene, aparte del usuario `admin`) |
 
 Comprueba que los servicios estén levantados:
 
@@ -442,7 +472,7 @@ SELECT * FROM polaris.lab.events;
 
 Los archivos de esas tablas quedan en MinIO bajo el bucket `warehouse`, en los
 prefijos `iceberg/` y `polaris/`. Puedes verlos en
-<http://localhost:9001> con usuario y password `minioadmin`.
+<http://localhost:9001> con usuario `admin` y password `password`.
 
 ## Usar Hive y ClickHouse
 
@@ -508,7 +538,7 @@ spark = (
 
 Este clúster expone MinIO como almacenamiento remoto S3 compatible. Para
 proyectos externos, usa `http://<host>:19000` como endpoint S3, bucket
-`warehouse`, access key `minioadmin` y secret key `minioadmin`. Si el proyecto
+`warehouse`, access key `admin` y secret key `password`. Si el proyecto
 corre fuera de la red de Compose, usa `spark://<host>:17077`,
 `thrift://<host>:19083` y `s3a://warehouse/iceberg` con endpoint
 `http://<host>:19000`.
