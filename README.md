@@ -124,7 +124,7 @@ docker compose up --build -d
 - `docker/spark/Dockerfile`: construye la imagen usada por el master y los
   workers. Parte de `apache/spark:3.5.6` y agrega JARs de Iceberg y S3A.
 - `docker/hive/Dockerfile`: construye la imagen usada por Hive Metastore y
-  HiveServer2. Parte de `apache/hive:4.0.1` y agrega el driver PostgreSQL y
+  HiveServer2. Parte de `apache/hive:3.1.0` y agrega el driver PostgreSQL y
   JARs S3A.
 
 ## Herramientas y componentes incluidos
@@ -134,8 +134,8 @@ docker compose up --build -d
 | Docker | Instalado en el host | Host | Ejecutar contenedores, listar imágenes, ver logs y limpiar recursos. |
 | Docker Compose v2 | Instalado en el host | Host | Construir y operar el clúster definido en `compose.yaml`. |
 | Apache Spark | `3.5.6` | Imagen `apache/spark:3.5.6` | Motor distribuido del clúster. |
-| Apache Iceberg | `1.10.1` | JAR `iceberg-spark-runtime-3.5_2.12` | Formato de tablas lakehouse usado desde Spark. |
-| Iceberg AWS bundle | `1.10.1` | JAR `iceberg-aws-bundle` | Integración Iceberg con almacenamiento S3 compatible. |
+| Apache Iceberg | `1.7.0` | JAR `iceberg-spark-runtime-3.5_2.12` | Formato de tablas lakehouse usado desde Spark. |
+| Iceberg AWS bundle | `1.7.0` | JAR `iceberg-aws-bundle` | Integración Iceberg con almacenamiento S3 compatible. |
 | Hadoop S3A | `hadoop-aws:3.3.4` | JAR en Spark y Hive | Permite leer/escribir rutas `s3a://...` hacia MinIO. |
 | Apache Polaris | `latest` | Servicio `polaris` | Catálogo REST moderno para tablas Iceberg. |
 | Polaris setup | `alpine/curl:8.21.0` | Servicio `polaris-setup` | Crea el catálogo `lakehouse` apuntando a MinIO. |
@@ -149,10 +149,10 @@ docker compose up --build -d
 | Java runtime | Incluido por la imagen base de Spark | Imagen `apache/spark:3.5.6` | Requisito de ejecución de Spark. |
 | MinIO | `RELEASE.2025-04-22T22-12-26Z` | Servicio `minio` | Emula S3 local para guardar datos del lakehouse. |
 | MinIO Client | `RELEASE.2025-04-16T18-13-26Z` | Servicio `minio-init` | Crea automáticamente el bucket `warehouse`. |
-| Hive Metastore | `apache/hive:4.0.1` | Servicio `hive-metastore` | Catálogo central para tablas Iceberg/Hive vía Thrift. |
-| HiveServer2 | `apache/hive:4.0.1` | Servicio `hiveserver2` | Endpoint SQL Hive/Beeline para pruebas con Hive. |
+| Hive Metastore | `apache/hive:3.1.0` | Servicio `hive-metastore` | Catálogo central para tablas Iceberg/Hive vía Thrift. |
+| HiveServer2 | `apache/hive:3.1.0` | Servicio `hiveserver2` | Endpoint SQL Hive/Beeline para pruebas con Hive. |
 | PostgreSQL | `16-alpine` | Servicio `hive-postgres` | Base de datos persistente para metadatos del metastore. |
-| ClickHouse | `26.3-lts` | Servicio `clickhouse` | Base columnar para analítica y pruebas de integración. |
+| ClickHouse | `24.8.4.13` | Servicio `clickhouse` | Base columnar para analítica y pruebas de integración. |
 | Bind mount `data/` | Carpeta local del host | `/data` en contenedores | Compartir entradas y salidas entre master y workers. |
 | Bind mount `warehouse/` | Carpeta local del host | `/warehouse` en contenedores | Persistir pruebas locales fuera de MinIO. |
 | Bind mount `jars/` | Carpeta local del host | `/opt/spark/jars-extra` en master | Agregar JARs externos al entorno del master. |
@@ -457,12 +457,12 @@ uses:
 
 ```bash
 docker image rm apache/spark:3.5.6
-docker image rm apache/hive:4.0.1
+docker image rm apache/hive:3.1.0
 docker image rm apache/polaris:latest
 docker image rm postgres:16-alpine
 docker image rm minio/minio:RELEASE.2025-04-22T22-12-26Z
 docker image rm minio/mc:RELEASE.2025-04-16T18-13-26Z
-docker image rm clickhouse/clickhouse-server:26.3-lts
+docker image rm clickhouse/clickhouse-server:24.8.4.13
 ```
 
 Si Docker indica que alguna imagen está en uso, primero detén y elimina los
@@ -487,8 +487,8 @@ rm -rf data/* warehouse/*
 ## Notas de compatibilidad
 
 - El contenedor usa Apache Spark 3.5.6.
-- Iceberg se instala en Spark con `iceberg-spark-runtime-3.5_2.12:1.10.1` y
-  `iceberg-aws-bundle:1.10.1`.
+- Iceberg se instala en Spark con `iceberg-spark-runtime-3.5_2.12:1.7.0` y
+  `iceberg-aws-bundle:1.7.0`.
 - Polaris se levanta como catálogo REST local para desarrollo. El catálogo
   `lakehouse` se crea automáticamente con `polaris-setup` y apunta a MinIO.
 - MinIO emula S3; este Compose no levanta HDFS.

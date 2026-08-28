@@ -198,7 +198,7 @@ services:
           -d "$${PAYLOAD}" || true
 
   clickhouse:
-    image: clickhouse/clickhouse-server:26.3-lts
+    image: clickhouse/clickhouse-server:24.8.4.13
     container_name: clickhouse
     hostname: clickhouse
     ports:
