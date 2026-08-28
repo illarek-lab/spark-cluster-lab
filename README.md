@@ -6,6 +6,19 @@ Metastore, HiveServer2, MinIO como almacenamiento S3 compatible y ClickHouse
 para analítica columnar. Los proyectos que usan este stack como cliente pueden
 vivir fuera de aquí.
 
+## Indice
+
+- [Como comenzar](docs/getting-started.md): guia paso a paso para levantar el
+  stack y probar Spark, Iceberg, Polaris, Hive, MinIO y ClickHouse.
+- [Configuración del clúster](#configuración-del-clúster): tamaño de workers y
+  recursos Spark.
+- [Herramientas y componentes incluidos](#herramientas-y-componentes-incluidos):
+  tabla de servicios, versiones y responsabilidades.
+- [Almacenamiento lakehouse](#almacenamiento-lakehouse): rutas S3A, metadatos y
+  persistencia.
+- [Parar y limpiar](#parar-y-limpiar): comandos para apagar, eliminar volumenes
+  e imagenes.
+
 ## Requisitos
 
 - macOS, Linux o Windows con Docker Desktop instalado y en ejecución.
