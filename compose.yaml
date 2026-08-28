@@ -77,6 +77,7 @@ services:
       retries: 30
 
   hive-metastore:
+    image: spark-cluster-lab-hive:3.1.0
     build:
       context: .
       dockerfile: docker/hive/Dockerfile
@@ -97,6 +98,7 @@ services:
       - "9083:9083"
 
   hiveserver2:
+    image: spark-cluster-lab-hive:3.1.0
     build:
       context: .
       dockerfile: docker/hive/Dockerfile

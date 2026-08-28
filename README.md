@@ -124,8 +124,8 @@ docker compose up --build -d
 - `docker/spark/Dockerfile`: construye la imagen usada por el master y los
   workers. Parte de `apache/spark:3.5.6` y agrega JARs de Iceberg y S3A.
 - `docker/hive/Dockerfile`: construye la imagen usada por Hive Metastore y
-  HiveServer2. Parte de `apache/hive:3.1.0` y agrega el driver PostgreSQL y
-  JARs S3A.
+  HiveServer2. Parte de Java 8, descarga `apache-hive-3.1.0-bin.tar.gz` desde
+  el archivo oficial de Apache y agrega el driver PostgreSQL y JARs S3A.
 
 ## Herramientas y componentes incluidos
 
@@ -149,8 +149,8 @@ docker compose up --build -d
 | Java runtime | Incluido por la imagen base de Spark | Imagen `apache/spark:3.5.6` | Requisito de ejecución de Spark. |
 | MinIO | `RELEASE.2025-04-22T22-12-26Z` | Servicio `minio` | Emula S3 local para guardar datos del lakehouse. |
 | MinIO Client | `RELEASE.2025-04-16T18-13-26Z` | Servicio `minio-init` | Crea automáticamente el bucket `warehouse`. |
-| Hive Metastore | `apache/hive:3.1.0` | Servicio `hive-metastore` | Catálogo central para tablas Iceberg/Hive vía Thrift. |
-| HiveServer2 | `apache/hive:3.1.0` | Servicio `hiveserver2` | Endpoint SQL Hive/Beeline para pruebas con Hive. |
+| Hive Metastore | Hive `3.1.0` | Servicio `hive-metastore` | Catálogo central para tablas Iceberg/Hive vía Thrift. |
+| HiveServer2 | Hive `3.1.0` | Servicio `hiveserver2` | Endpoint SQL Hive/Beeline para pruebas con Hive. |
 | PostgreSQL | `16-alpine` | Servicio `hive-postgres` | Base de datos persistente para metadatos del metastore. |
 | ClickHouse | `24.8.4.13` | Servicio `clickhouse` | Base columnar para analítica y pruebas de integración. |
 | Bind mount `data/` | Carpeta local del host | `/data` en contenedores | Compartir entradas y salidas entre master y workers. |
@@ -457,7 +457,7 @@ uses:
 
 ```bash
 docker image rm apache/spark:3.5.6
-docker image rm apache/hive:3.1.0
+docker image rm spark-cluster-lab-hive:3.1.0
 docker image rm apache/polaris:latest
 docker image rm postgres:16-alpine
 docker image rm minio/minio:RELEASE.2025-04-22T22-12-26Z
