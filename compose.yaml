@@ -375,3 +375,14 @@ volumes:
   clickhouse_data:
   clickhouse_logs:
   hdfs_namenode_data:
+
+networks:
+  default:
+    # Sin esto, Compose nombra la red "<proyecto>_default" (con guion bajo).
+    # Docker usa ese nombre como dominio de busqueda DNS dentro de los
+    # contenedores, y HiveServer2 (HiveMetaStoreClient.resolveUris) intenta
+    # canonicalizar "hive-metastore" a "hive-metastore.spark-cluster-lab_default",
+    # que java.net.URI rechaza por el guion bajo (invalido en un hostname):
+    # "Illegal character in hostname". Un nombre de red sin guion bajo evita
+    # el problema de raiz.
+    name: spark-cluster-lab

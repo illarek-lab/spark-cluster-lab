@@ -16,6 +16,9 @@ vivir fuera de aquí.
   estático.
 - [Usar desde otro proyecto](docs/external-project.md): guia para conectar un
   proyecto cliente, como `spark-cluster-lab-test`, al servidor `100.85.61.29`.
+- [Catálogo de datos](docs/data-catalog.md): stack opcional de OpenMetadata
+  (`compose.openmetadata.yaml`) para búsqueda, documentación y linaje sobre
+  las tablas de Hive Metastore.
 - [Configuración del clúster](#configuración-del-clúster): tamaño de workers y
   recursos Spark.
 - [Herramientas y componentes incluidos](#herramientas-y-componentes-incluidos):
