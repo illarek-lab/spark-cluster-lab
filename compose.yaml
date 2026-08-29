@@ -115,6 +115,16 @@ services:
       "
     ports:
       - "19083:9083"
+    healthcheck:
+      # service_started (contenedor arrancado) no alcanza: el schematool -initSchema
+      # tarda unos segundos y el metastore Thrift no queda escuchando hasta despues.
+      # hiveserver2 dependia de "started", arrancaba antes de que esto respondiera,
+      # fallaba su conexion inicial al metastore y quedaba colgado sin reintentar.
+      test: ["CMD-SHELL", "echo > /dev/tcp/localhost/9083"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
 
   hiveserver2:
     image: spark-cluster-lab-hive:3.1.0
@@ -125,7 +135,7 @@ services:
     hostname: hiveserver2
     depends_on:
       hive-metastore:
-        condition: service_started
+        condition: service_healthy
       minio-init:
         condition: service_completed_successfully
     environment:
@@ -186,7 +196,7 @@ services:
             "storageConfigInfo": {
               "storageType": "S3",
               "allowedLocations": ["s3://warehouse/polaris"],
-              "endpoint": "http://localhost:19000",
+              "endpoint": "http://100.85.61.29:19000",
               "endpointInternal": "http://minio:9000",
               "pathStyleAccess": true,
               "region": "us-east-1"
@@ -303,7 +313,7 @@ services:
 
     depends_on:
       hive-metastore:
-        condition: service_started
+        condition: service_healthy
       minio-init:
         condition: service_completed_successfully
       polaris-setup:

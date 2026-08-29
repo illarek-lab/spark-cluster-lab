@@ -2,8 +2,10 @@
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
   <property>
+    <!-- 3 es el default estandar de Hadoop. Con 4 datanodes queda margen
+         de 1 para que un datanode pueda estar caido sin perder bloques. -->
     <name>dfs.replication</name>
-    <value>2</value>
+    <value>3</value>
   </property>
   <property>
     <name>dfs.namenode.name.dir</name>
