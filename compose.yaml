@@ -120,7 +120,9 @@ services:
       # tarda unos segundos y el metastore Thrift no queda escuchando hasta despues.
       # hiveserver2 dependia de "started", arrancaba antes de que esto respondiera,
       # fallaba su conexion inicial al metastore y quedaba colgado sin reintentar.
-      test: ["CMD-SHELL", "echo > /dev/tcp/localhost/9083"]
+      # CMD-SHELL corre con /bin/sh (dash en esta imagen), que no soporta
+      # /dev/tcp: hay que invocar bash explicitamente para ese truco.
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/9083"]
       interval: 5s
       timeout: 5s
       retries: 30
