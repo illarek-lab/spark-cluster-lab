@@ -279,6 +279,9 @@ lab en MinIO/volúmenes Docker.
 | Volumen `hive_postgres_data` | Volumen Docker | PostgreSQL | Persistir metadatos de bases, tablas y particiones. |
 | Volumen `clickhouse_data` | Volumen Docker | ClickHouse | Persistir bases y tablas de ClickHouse. |
 | Volumen `hdfs_namenode_data` | Volumen Docker | HDFS NameNode | Persistir la metadata del namespace HDFS entre reinicios. |
+| Trino | `latest` | Servicio `trino` (`:18089`) | Motor SQL federado sobre catálogos `hive`, `iceberg`, `polaris`, `clickhouse` (`conf/trino/catalog/`). |
+| Gravitino | `latest` | Servicio `gravitino` (`:18090`) | Catálogo unificado con UI propia; sin catálogos precargados, se configuran desde su UI. |
+| HetuEngine (openLooKeng) | — | **Planeado, no desplegado** | Sin imagen Docker oficial; requeriría compilar desde fuente (Maven) antes de poder agregarlo. |
 
 ## Arrancar todo
 
