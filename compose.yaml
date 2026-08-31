@@ -235,6 +235,7 @@ services:
     volumes:
       - clickhouse_data:/var/lib/clickhouse
       - clickhouse_logs:/var/log/clickhouse-server
+      - ./conf/clickhouse/cors.xml:/etc/clickhouse-server/users.d/cors.xml:ro
     ulimits:
       nofile:
         soft: 262144

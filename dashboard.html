@@ -161,6 +161,16 @@
     gap: 0.5rem 1.5rem;
   }
   .creds div span.k { color: var(--muted); }
+  .client {
+    margin-top: 0.3rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.1rem 0.4rem;
+  }
+  .client span.k { color: var(--text); }
   footer {
     max-width: 980px;
     margin: 2rem auto 0;
@@ -207,13 +217,15 @@ const DATA = [
     group: "MinIO",
     services: [
       { name: "MinIO Console", url: "http://100.85.61.29:19001", desc: "UI web de buckets y objetos (admin/pass1234).", checkable: true },
-      { name: "MinIO S3 API", url: "http://100.85.61.29:19000", desc: "Endpoint S3 compatible para s3a://warehouse.", checkable: true },
+      { name: "MinIO S3 API", url: "http://100.85.61.29:19000", desc: "Endpoint S3 compatible para s3a://warehouse.", checkable: true,
+        client: { host: "100.85.61.29", port: "19000", database: "warehouse (bucket)", user: "admin", password: "pass1234" } },
     ],
   },
   {
     group: "Polaris",
     services: [
-      { name: "Polaris REST Catalog", url: "http://100.85.61.29:18181/api/catalog", desc: "Catálogo Iceberg polaris.", checkable: true },
+      { name: "Polaris REST Catalog", url: "http://100.85.61.29:18181/api/catalog", desc: "Catálogo Iceberg polaris.", checkable: true,
+        client: { host: "100.85.61.29", port: "18181", database: "lakehouse (warehouse)", user: "admin (client_id)", password: "pass1234 (client_secret)" } },
       { name: "Polaris Management", url: "http://100.85.61.29:18181/api/management/v1", desc: "Administración de catálogos y principals.", checkable: true },
       { name: "Polaris Health", url: "http://100.85.61.29:18182/q/health", desc: "Healthcheck y métricas internas.", checkable: true },
     ],
@@ -221,29 +233,35 @@ const DATA = [
   {
     group: "Hive",
     services: [
-      { name: "Hive Metastore", url: "thrift://100.85.61.29:19083", desc: "Catálogo Iceberg iceberg (Thrift).", checkable: false },
-      { name: "HiveServer2 JDBC", url: "jdbc:hive2://100.85.61.29:11000", desc: "SQL Hive/Beeline.", checkable: false },
+      { name: "Hive Metastore", url: "thrift://100.85.61.29:19083", desc: "Catálogo Iceberg iceberg (Thrift).", checkable: false,
+        client: { host: "100.85.61.29", port: "19083", database: "iceberg", user: "(sin auth)", password: "(sin auth)" } },
+      { name: "HiveServer2 JDBC", url: "jdbc:hive2://100.85.61.29:11000", desc: "SQL Hive/Beeline.", checkable: false,
+        client: { host: "100.85.61.29", port: "11000", database: "default", user: "(cualquiera, sin auth)", password: "(vacío)" } },
       { name: "HiveServer2 UI", url: "http://100.85.61.29:11002", desc: "Estado de HiveServer2.", checkable: true },
     ],
   },
   {
     group: "ClickHouse",
     services: [
-      { name: "ClickHouse HTTP", url: "http://100.85.61.29:18123", desc: "Consultas y cargas vía HTTP.", checkable: true },
+      { name: "ClickHouse HTTP", url: "http://100.85.61.29:18123", desc: "Consultas y cargas vía HTTP. Punto = login real (SELECT 1), no solo puerto.", checkable: true, authCheck: "clickhouse-http",
+        client: { host: "100.85.61.29", port: "18123", database: "default", user: "admin", password: "pass1234" } },
       { name: "ClickHouse Play UI", url: "http://100.85.61.29:18123/play?user=admin&password=pass1234", desc: "Consola SQL interactiva.", checkable: false },
-      { name: "ClickHouse Native", url: "100.85.61.29:19010", desc: "Puerto del cliente nativo (no es http).", checkable: false },
+      { name: "ClickHouse Native", url: "100.85.61.29:19010", desc: "Puerto del cliente nativo (no es http).", checkable: false,
+        client: { host: "100.85.61.29", port: "19010", database: "default", user: "admin", password: "pass1234" } },
     ],
   },
   {
     group: "PostgreSQL",
     services: [
-      { name: "PostgreSQL Metastore", url: "100.85.61.29:15433", desc: "Metadatos internos de Hive (admin/pass1234).", checkable: false },
+      { name: "PostgreSQL Metastore", url: "100.85.61.29:15433", desc: "Metadatos internos de Hive.", checkable: false,
+        client: { host: "100.85.61.29", port: "15433", database: "metastore_db", user: "admin", password: "pass1234" } },
     ],
   },
   {
     group: "Catálogos",
     services: [
-      { name: "Trino UI", url: "http://100.85.61.29:18089", desc: "Motor de queries federadas: hive, iceberg, polaris, clickhouse.", checkable: true },
+      { name: "Trino UI", url: "http://100.85.61.29:18089", desc: "Motor de queries federadas: hive, iceberg, polaris, clickhouse.", checkable: true,
+        client: { host: "100.85.61.29", port: "18089", database: "iceberg.lab / polaris.lab / clickhouse.default", user: "(cualquiera, sin auth)", password: "(vacío)" } },
       { name: "Gravitino UI", url: "http://100.85.61.29:18090", desc: "Catalogo unificado (metalakes/catalogos), configuralo desde la UI.", checkable: true },
     ],
   },
@@ -310,10 +328,22 @@ function buildCard(service, accent2) {
   card.appendChild(top);
   card.appendChild(url);
   card.appendChild(desc);
+
+  if (service.client) {
+    const c = service.client;
+    const box = document.createElement("div");
+    box.className = "client";
+    box.innerHTML = [
+      ["Host", c.host], ["Port", c.port], ["Database", c.database],
+      ["User", c.user], ["Password", c.password],
+    ].map(([k, v]) => `<span class="k">${k}</span><span>${v}</span>`).join("");
+    card.appendChild(box);
+  }
+
   card.appendChild(actions);
 
   if (service.checkable) {
-    dots.push({ dot, url: service.url });
+    dots.push({ dot, service });
   }
 
   return card;
@@ -346,13 +376,31 @@ async function pingOne(entry) {
   entry.dot.dataset.state = "pending";
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 3000);
+  const { service } = entry;
   try {
-    await fetch(entry.url, { mode: "no-cors", cache: "no-store", signal: controller.signal });
-    entry.dot.dataset.state = "ok";
-    entry.dot.title = "Responde";
+    if (service.authCheck === "clickhouse-http") {
+      // Login real (no solo puerto): SELECT 1 con Basic Auth. Requiere CORS
+      // habilitado en ClickHouse (add_http_cors_header); si no, cae al catch
+      // y no distingue "credenciales malas" de "bloqueado por CORS".
+      const { user, password } = service.client;
+      const res = await fetch(`${service.url}/?query=SELECT%201`, {
+        headers: { Authorization: "Basic " + btoa(`${user}:${password}`) },
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      entry.dot.dataset.state = "ok";
+      entry.dot.title = "Login OK (SELECT 1 exitoso)";
+    } else {
+      await fetch(service.url, { mode: "no-cors", cache: "no-store", signal: controller.signal });
+      entry.dot.dataset.state = "ok";
+      entry.dot.title = "Responde (solo puerto, no valida credenciales)";
+    }
   } catch (err) {
     entry.dot.dataset.state = "bad";
-    entry.dot.title = "No responde (timeout o conexión rechazada)";
+    entry.dot.title = service.authCheck
+      ? `Login falló o bloqueado por CORS: ${err.message}`
+      : "No responde (timeout o conexión rechazada)";
   } finally {
     clearTimeout(timeout);
   }

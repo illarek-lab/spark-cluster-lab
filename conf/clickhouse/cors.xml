@@ -1,0 +1,10 @@
+<clickhouse>
+  <profiles>
+    <default>
+      <!-- Permite que dashboard.html (abierto como file://) valide login
+           real contra ClickHouse HTTP desde el navegador sin que el CORS
+           bloquee la respuesta. Laboratorio, no produccion. -->
+      <add_http_cors_header>1</add_http_cors_header>
+    </default>
+  </profiles>
+</clickhouse>
