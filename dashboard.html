@@ -13,6 +13,7 @@
     --text: #e7ebf3;
     --muted: #8993a8;
     --accent: #5b8cff;
+    --accent2: #e8955b;
     --ok: #35c98f;
     --bad: #ff5d6c;
     --pending: #e8b64a;
@@ -125,6 +126,7 @@
     text-decoration: none;
   }
   .card-url:hover { text-decoration: underline; }
+  .card-url.accent2 { color: var(--accent2); }
   .card-url.text-only {
     color: var(--muted);
     cursor: default;
@@ -238,13 +240,21 @@ const DATA = [
       { name: "PostgreSQL Metastore", url: "100.85.61.29:15433", desc: "Metadatos internos de Hive (admin/pass1234).", checkable: false },
     ],
   },
+  {
+    group: "Extra Tools",
+    accent2: true,
+    services: [
+      { name: "Polaris Explorer", url: "extra-tools/polaris-explorer.html", desc: "Explorador manual de catalogos/namespaces/tablas de Polaris (no oficial).", checkable: false, link: true },
+      { name: "OpenMetadata UI", url: "http://100.85.61.29:8585", desc: "Catalogo de datos (docs/data-catalog.md). Login admin@open-metadata.org/admin.", checkable: true },
+    ],
+  },
 ];
 
 const sectionsEl = document.getElementById("sections");
 const summaryEl = document.getElementById("status-summary");
 const dots = [];
 
-function buildCard(service) {
+function buildCard(service, accent2) {
   const card = document.createElement("div");
   card.className = "card";
 
@@ -263,10 +273,11 @@ function buildCard(service) {
   top.appendChild(name);
   top.appendChild(dot);
 
-  const url = document.createElement(service.checkable ? "a" : "span");
-  url.className = "card-url" + (service.checkable ? "" : " text-only");
+  const clickable = service.checkable || service.link;
+  const url = document.createElement(clickable ? "a" : "span");
+  url.className = "card-url" + (clickable ? "" : " text-only") + (accent2 ? " accent2" : "");
   url.textContent = service.url;
-  if (service.checkable) {
+  if (clickable) {
     url.href = service.url;
     url.target = "_blank";
     url.rel = "noopener noreferrer";
@@ -305,9 +316,10 @@ DATA.forEach(group => {
   const section = document.createElement("section");
   const h2 = document.createElement("h2");
   h2.textContent = group.group;
+  if (group.accent2) h2.style.color = "var(--accent2)";
   const grid = document.createElement("div");
   grid.className = "grid";
-  group.services.forEach(s => grid.appendChild(buildCard(s)));
+  group.services.forEach(s => grid.appendChild(buildCard(s, group.accent2)));
   section.appendChild(h2);
   section.appendChild(grid);
   sectionsEl.appendChild(section);

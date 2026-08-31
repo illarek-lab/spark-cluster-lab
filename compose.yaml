@@ -45,6 +45,14 @@ x-polaris-env: &polaris-env
   POLARIS_BOOTSTRAP_CREDENTIALS: POLARIS,admin,pass1234
   polaris.realm-context.realms: POLARIS
   quarkus.otel.sdk.disabled: "true"
+  # Permite pegarle a la API REST de Polaris desde herramientas de browser
+  # (ej. paginas HTML locales abiertas como file://, origin "null") sin que
+  # el navegador bloquee la respuesta por CORS. Laboratorio, no produccion:
+  # "*" como origen esta bien aca.
+  quarkus.http.cors: "true"
+  quarkus.http.cors.origins: "*"
+  quarkus.http.cors.methods: "GET,POST,PUT,DELETE,OPTIONS"
+  quarkus.http.cors.headers: "Content-Type,Authorization,Polaris-Realm"
 
 services:
 

@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Polaris Explorer</title>
+<style>
+  body { background:#0f1420; color:#e7ebf3; font-family:-apple-system,Segoe UI,Roboto,sans-serif; padding:1.5rem; }
+  input { background:#171d2b; border:1px solid #262e42; color:#e7ebf3; padding:.4rem .6rem; border-radius:6px; margin:.2rem; }
+  button { background:#5b8cff; color:#fff; border:none; padding:.45rem .9rem; border-radius:6px; cursor:pointer; margin:.2rem; }
+  button:hover { filter:brightness(1.1); }
+  ul { list-style:none; padding-left:0; }
+  li { padding:.35rem .5rem; border-bottom:1px solid #262e42; cursor:pointer; }
+  li:hover { background:#171d2b; }
+  pre { background:#171d2b; border:1px solid #262e42; border-radius:8px; padding:.75rem; overflow:auto; max-height:50vh; }
+  .col { display:inline-block; vertical-align:top; width:32%; margin-right:1%; }
+  h3 { font-size:.85rem; text-transform:uppercase; color:#8993a8; }
+  .err { color:#ff5d6c; }
+</style>
+</head>
+<body>
+
+<h2>Polaris Explorer</h2>
+<div>
+  <input id="base" value="http://100.85.61.29:18181" size="30" placeholder="Base URL" />
+  <input id="realm" value="POLARIS" placeholder="Realm" />
+  <input id="cid" value="admin" placeholder="Client ID" />
+  <input id="secret" value="pass1234" placeholder="Client Secret" type="password" />
+  <button onclick="connect()">Conectar</button>
+  <span id="status"></span>
+</div>
+
+<div style="margin-top:1rem">
+  <div class="col">
+    <h3>Catálogos</h3>
+    <ul id="catalogs"></ul>
+  </div>
+  <div class="col">
+    <h3>Namespaces</h3>
+    <ul id="namespaces"></ul>
+  </div>
+  <div class="col">
+    <h3>Tablas</h3>
+    <ul id="tables"></ul>
+  </div>
+</div>
+
+<h3>Detalle</h3>
+<pre id="detail">Conectate y elegí un catálogo.</pre>
+
+<script>
+let BASE, TOKEN, CATALOG, NS;
+
+async function connect() {
+  BASE = document.getElementById('base').value.replace(/\/$/, '');
+  const realm = document.getElementById('realm').value;
+  const cid = document.getElementById('cid').value;
+  const secret = document.getElementById('secret').value;
+  const statusEl = document.getElementById('status');
+  statusEl.textContent = 'conectando...';
+  try {
+    const res = await fetch(`${BASE}/api/catalog/v1/oauth/tokens`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `grant_type=client_credentials&client_id=${encodeURIComponent(cid)}&client_secret=${encodeURIComponent(secret)}&scope=PRINCIPAL_ROLE:ALL`,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(JSON.stringify(data));
+    TOKEN = data.access_token;
+    statusEl.textContent = 'OK';
+    loadCatalogs(realm);
+  } catch (e) {
+    statusEl.innerHTML = `<span class="err">${e.message}</span>`;
+  }
+}
+
+async function api(path, realm) {
+  const res = await fetch(`${BASE}${path}`, {
+    headers: { Authorization: `Bearer ${TOKEN}`, 'Polaris-Realm': realm || document.getElementById('realm').value },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(JSON.stringify(data, null, 2));
+  return data;
+}
+
+async function loadCatalogs() {
+  const data = await api('/api/management/v1/catalogs');
+  const ul = document.getElementById('catalogs');
+  ul.innerHTML = '';
+  (data.catalogs || []).forEach(c => {
+    const li = document.createElement('li');
+    li.textContent = c.name;
+    li.onclick = () => loadNamespaces(c.name);
+    ul.appendChild(li);
+  });
+  document.getElementById('detail').textContent = JSON.stringify(data, null, 2);
+}
+
+async function loadNamespaces(catalog) {
+  CATALOG = catalog;
+  try {
+    const data = await api(`/api/catalog/v1/${catalog}/namespaces`);
+    const ul = document.getElementById('namespaces');
+    ul.innerHTML = '';
+    document.getElementById('tables').innerHTML = '';
+    (data.namespaces || []).forEach(nsArr => {
+      const ns = nsArr.join('.');
+      const li = document.createElement('li');
+      li.textContent = ns;
+      li.onclick = () => loadTables(catalog, ns);
+      ul.appendChild(li);
+    });
+    document.getElementById('detail').textContent = JSON.stringify(data, null, 2);
+  } catch (e) {
+    document.getElementById('detail').innerHTML = `<span class="err">${e.message}</span>`;
+  }
+}
+
+async function loadTables(catalog, ns) {
+  NS = ns;
+  try {
+    const data = await api(`/api/catalog/v1/${catalog}/namespaces/${ns}/tables`);
+    const ul = document.getElementById('tables');
+    ul.innerHTML = '';
+    (data.identifiers || []).forEach(id => {
+      const li = document.createElement('li');
+      li.textContent = id.name;
+      li.onclick = () => loadTable(catalog, ns, id.name);
+      ul.appendChild(li);
+    });
+    document.getElementById('detail').textContent = JSON.stringify(data, null, 2);
+  } catch (e) {
+    document.getElementById('detail').innerHTML = `<span class="err">${e.message}</span>`;
+  }
+}
+
+async function loadTable(catalog, ns, table) {
+  try {
+    const data = await api(`/api/catalog/v1/${catalog}/namespaces/${ns}/tables/${table}`);
+    document.getElementById('detail').textContent = JSON.stringify(data, null, 2);
+  } catch (e) {
+    document.getElementById('detail').innerHTML = `<span class="err">${e.message}</span>`;
+  }
+}
+</script>
+
+</body>
+</html>
