@@ -377,6 +377,30 @@ services:
     volumes:
       - ./conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
 
+  trino:
+    image: trinodb/trino:latest
+    container_name: trino
+    hostname: trino
+    depends_on:
+      hive-metastore:
+        condition: service_healthy
+      polaris:
+        condition: service_healthy
+      clickhouse:
+        condition: service_started
+    ports:
+      - "18089:8080"
+    volumes:
+      - ./conf/trino/catalog:/etc/trino/catalog:ro
+
+  gravitino:
+    image: apache/gravitino:latest
+    container_name: gravitino
+    hostname: gravitino
+    ports:
+      - "18090:8090"
+      - "19002:9001"
+
 volumes:
   minio_data:
   hive_postgres_data:

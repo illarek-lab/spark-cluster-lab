@@ -71,7 +71,7 @@ indicados en [Servicios disponibles](#servicios-disponibles).
 Antes de levantar el stack, revisa si los puertos estan libres en el servidor:
 
 ```bash
-for port in 17077 18080 18181 18182 19000 19001 19083 11000 11002 18123 19010 15433 19870 18088; do
+for port in 17077 18080 18181 18182 19000 19001 19083 11000 11002 18123 19010 15433 19870 18088 18089 18090 19002; do
   ss -ltn "( sport = :$port )" | grep -q LISTEN && echo "$port ocupado" || echo "$port libre"
 done
 ```
@@ -621,7 +621,7 @@ docker compose down -v
 Si algún puerto está ocupado, detén el proceso que lo usa o cambia el mapeo de
 puertos en `compose.yaml`. Los puertos publicados por defecto son `17077`, `18080`,
 `18181`, `18182`, `19000`, `19001`, `19083`, `11000`, `11002`, `18123`,
-`19010`, `15433`, `19870` y `18088`.
+`19010`, `15433`, `19870`, `18088`, `18089`, `18090` y `19002`.
 
 Si el worker no aparece en la UI o alguno de los servicios no arranca, revisa
 los logs:
