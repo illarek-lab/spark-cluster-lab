@@ -71,7 +71,7 @@ indicados en [Servicios disponibles](#servicios-disponibles).
 Antes de levantar el stack, revisa si los puertos estan libres en el servidor:
 
 ```bash
-for port in 17077 18080 18181 18182 19000 19001 19083 11000 11002 18123 19010 15433 19870 18088 18089 18090 19002; do
+for port in 17077 18080 18181 18182 19000 19001 19083 19011 19012 18123 19010 15433 19870 18088 18089 18090 19002; do
   ss -ltn "( sport = :$port )" | grep -q LISTEN && echo "$port ocupado" || echo "$port libre"
 done
 ```
@@ -89,8 +89,8 @@ por ejemplo `minio:9000`, `spark-master:7077` y `clickhouse:9000`.
 | `18181` | `8181` | Polaris REST Catalog |
 | `18182` | `8182` | Polaris health/metrics |
 | `19083` | `9083` | Hive Metastore |
-| `11000` | `10000` | HiveServer2 JDBC |
-| `11002` | `10002` | HiveServer2 UI |
+| `19011` | `10000` | HiveServer2 JDBC |
+| `19012` | `10002` | HiveServer2 UI |
 | `18123` | `8123` | ClickHouse HTTP |
 | `19010` | `9000` | ClickHouse Native |
 | `15433` | `5432` | PostgreSQL del metastore |
@@ -311,8 +311,8 @@ Servicios disponibles:
 | Polaris Management | `http://localhost:18181/api/management/v1` | `http://polaris:8181/api/management/v1` | Administración de catálogos y principals. |
 | Polaris Health/Metrics | <http://localhost:18182/q/health> | `http://polaris:8182` | Healthcheck y métricas internas. |
 | Hive Metastore | `thrift://localhost:19083` | `thrift://hive-metastore:9083` | Catálogo de tablas. |
-| HiveServer2 | `jdbc:hive2://localhost:11000` | `jdbc:hive2://hiveserver2:10000` | SQL Hive/Beeline. |
-| HiveServer2 UI | <http://localhost:11002> | `http://hiveserver2:10002` | UI web de HiveServer2. |
+| HiveServer2 | `jdbc:hive2://localhost:19011` | `jdbc:hive2://hiveserver2:10000` | SQL Hive/Beeline. |
+| HiveServer2 UI | <http://localhost:19012> | `http://hiveserver2:10002` | UI web de HiveServer2. |
 | ClickHouse HTTP | <http://localhost:18123> | `http://clickhouse:8123` | API HTTP de ClickHouse. |
 | ClickHouse Native | `localhost:19010` | `clickhouse:9000` | Cliente nativo de ClickHouse. |
 
@@ -620,7 +620,7 @@ docker compose down -v
 
 Si algún puerto está ocupado, detén el proceso que lo usa o cambia el mapeo de
 puertos en `compose.yaml`. Los puertos publicados por defecto son `17077`, `18080`,
-`18181`, `18182`, `19000`, `19001`, `19083`, `11000`, `11002`, `18123`,
+`18181`, `18182`, `19000`, `19001`, `19083`, `19011`, `19012`, `18123`,
 `19010`, `15433`, `19870`, `18088`, `18089`, `18090` y `19002`.
 
 Si el worker no aparece en la UI o alguno de los servicios no arranca, revisa

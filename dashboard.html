@@ -235,9 +235,9 @@ const DATA = [
     services: [
       { name: "Hive Metastore", url: "thrift://100.85.61.29:19083", desc: "Catálogo Iceberg iceberg (Thrift).", checkable: false,
         client: { host: "100.85.61.29", port: "19083", database: "iceberg", user: "(sin auth)", password: "(sin auth)" } },
-      { name: "HiveServer2 JDBC", url: "jdbc:hive2://100.85.61.29:11000", desc: "SQL Hive/Beeline.", checkable: false,
-        client: { host: "100.85.61.29", port: "11000", database: "default", user: "(cualquiera, sin auth)", password: "(vacío)" } },
-      { name: "HiveServer2 UI", url: "http://100.85.61.29:11002", desc: "Estado de HiveServer2.", checkable: true },
+      { name: "HiveServer2 JDBC", url: "jdbc:hive2://100.85.61.29:19011", desc: "SQL Hive/Beeline.", checkable: false,
+        client: { host: "100.85.61.29", port: "19011", database: "default", user: "(cualquiera, sin auth)", password: "(vacío)" } },
+      { name: "HiveServer2 UI", url: "http://100.85.61.29:19012", desc: "Estado de HiveServer2.", checkable: true },
     ],
   },
   {

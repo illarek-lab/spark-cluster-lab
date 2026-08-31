@@ -34,7 +34,7 @@ Servicios clave que deben estar arriba:
 | MinIO Console | `http://100.85.61.29:19001` |
 | Polaris REST Catalog | `http://100.85.61.29:18181/api/catalog` |
 | Hive Metastore | `thrift://100.85.61.29:19083` |
-| HiveServer2 | `jdbc:hive2://100.85.61.29:11000` |
+| HiveServer2 | `jdbc:hive2://100.85.61.29:19011` |
 | ClickHouse HTTP | `http://100.85.61.29:18123` |
 | ClickHouse Native | `100.85.61.29:19010` |
 

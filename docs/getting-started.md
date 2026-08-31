@@ -27,7 +27,7 @@ Si algun puerto esta ocupado, edita el mapeo correspondiente en `compose.yaml`
 antes de levantar el stack. Puedes revisar los defaults con:
 
 ```bash
-for port in 17077 18080 18181 18182 19000 19001 19083 11000 11002 18123 19010 15433 19870 18088; do
+for port in 17077 18080 18181 18182 19000 19001 19083 19011 19012 18123 19010 15433 19870 18088; do
   ss -ltn "( sport = :$port )" | grep -q LISTEN && echo "$port ocupado" || echo "$port libre"
 done
 ```
@@ -55,7 +55,7 @@ docker compose logs --tail=100 spark-master spark-worker minio polaris hive-meta
 | MinIO Console | <http://localhost:19001> | Ver buckets y objetos. |
 | Polaris REST Catalog | `http://localhost:18181/api/catalog` | Catalogo REST de Iceberg. |
 | Hive Metastore | `thrift://localhost:19083` | Catalogo Hive/Iceberg clasico. |
-| HiveServer2 | `jdbc:hive2://localhost:11000` | SQL con Beeline/JDBC. |
+| HiveServer2 | `jdbc:hive2://localhost:19011` | SQL con Beeline/JDBC. |
 | ClickHouse HTTP | <http://localhost:18123> | Consultas HTTP. |
 | ClickHouse Native | `localhost:19010` | Cliente nativo. |
 

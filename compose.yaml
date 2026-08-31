@@ -151,10 +151,13 @@ services:
     environment:
       <<: *hive-env
     command: >
-      bash -lc "exec hiveserver2"
+      bash -lc "exec hive --service hiveserver2 --hiveconf hive.root.logger=INFO,console"
+    # 11000/11002 quedaban fuera del rango de puertos permitido por el
+    # firewall/ACL externo (17xxx/18xxx/19xxx sí funcionan, 11xxx no) --
+    # remapeado a 19011/19012 para no depender de tocar esa regla.
     ports:
-      - "11000:10000"
-      - "11002:10002"
+      - "19011:10000"
+      - "19012:10002"
 
   polaris:
     image: apache/polaris:latest
